@@ -78,7 +78,7 @@ def report_project_cost(request):
         
         # 缓存数据，有效期10分钟
         if export != 'excel':
-            cache.set(cache_key, {'material_agg': material_agg, 'total': total}, 600)
+            cache.set(cache_key, {'material_agg': list(material_agg), 'total': float(total)}, 600)
 
     if export == 'excel':
         headers = ['分类', '材料名称', '规格', '单位', '数量', '平均单价', '金额', '占比']

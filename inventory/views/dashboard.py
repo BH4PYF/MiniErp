@@ -36,7 +36,7 @@ def dashboard(request):
             selected_project_material = None
     
     # 构建缓存键
-    cache_key = f'dashboard_stats_{today}_{project_progress_id or "all"}_{project_material_id or "all"}'
+    cache_key = f'dashboard_stats_{today}_{project_progress_id or "none"}_{project_material_id or "none"}'
     stats = cache.get(cache_key)
 
     if stats is None:
