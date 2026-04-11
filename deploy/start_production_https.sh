@@ -22,7 +22,7 @@ fi
 # 获取当前用户名
 REAL_USER=${SUDO_USER:-$USER}
 HOME_DIR=$(eval echo ~$REAL_USER)
-APP_DIR="$HOME_DIR/Project-Material-Management-System"
+APP_DIR="$HOME_DIR/MiniErp"
 
 echo -e "\n${GREEN}[1/6] 检查 SSL 证书...${NC}"
 SSL_DIR="/etc/nginx/ssl"

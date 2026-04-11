@@ -7,7 +7,7 @@
 set -e
 
 # 配置
-PROJECT_DIR="/home/abc/Project-Material-Management-System"
+PROJECT_DIR="/home/abc/MiniErp"
 DB_NAME="material_system"
 BACKUP_DIR_LOCAL="/home/abc/project_backups"
 BACKUP_DIR_NET="/mnt/network_backup"

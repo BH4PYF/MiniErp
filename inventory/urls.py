@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 from .views import tasks as task_views
-from .views import subcontractor, subcontract_list, budget, contract, measurement, settlement, api, material_plan
+from .views import subcontractor, subcontract_list, budget, contract, measurement, settlement, api, material_plan, report
 
 urlpatterns = [
     # 登录/登出
@@ -61,16 +61,21 @@ urlpatterns = [
     path('material-plans/edit/<int:id>/', views.material_plan.material_plan_edit, name='material_plan_edit'),
     path('material-plans/delete/<int:id>/', views.material_plan.material_plan_delete, name='material_plan_delete'),
     path('material-plans/detail/<int:id>/', views.material_plan.material_plan_detail, name='material_plan_detail'),
+    path('material-plans/export/', views.material_plan.export_material_plans, name='export_material_plans'),
     path('api/material-plan/<int:plan_id>/items/', views.material_plan.material_plan_items_api, name='material_plan_items_api'),
     # 统计报表
-    path('reports/', views.report_page, name='report_page'),
-    path('reports/project-cost/', views.report_project_cost, name='report_project_cost'),
-    path('reports/supplier-cost/', views.report_supplier_cost, name='report_supplier_cost'),
-    path('reports/monthly/', views.report_monthly, name='report_monthly'),
+    path('reports/', report.report_page, name='report_page'),
+    path('reports/project-cost/', report.report_project_cost, name='report_project_cost'),
+    path('reports/supplier-cost/', report.report_supplier_cost, name='report_supplier_cost'),
+    path('reports/monthly/', report.report_monthly, name='report_monthly'),
+    # 分包分析报表
+    path('reports/project-subcontract/', report.report_project_subcontract, name='report_project_subcontract'),
+    path('reports/subcontractor-analysis/', report.report_subcontractor_analysis, name='report_subcontractor_analysis'),
+    path('reports/monthly-subcontract/', report.report_monthly_subcontract, name='report_monthly_subcontract'),
     # 图表分析
-    path('charts/', views.chart_page, name='chart_page'),
-    path('api/chart-data/', views.chart_data_api, name='chart_data_api'),
-    path('api/years/', views.get_years_list, name='get_years_list'),
+    path('charts/', report.chart_page, name='chart_page'),
+    path('api/chart-data/', report.chart_data_api, name='chart_data_api'),
+    path('api/years/', report.get_years_list, name='get_years_list'),
     # Excel 导出/导入
     path('export/', views.export_excel, name='export_excel'),
     path('import/', views.import_excel, name='import_excel'),
@@ -81,6 +86,8 @@ urlpatterns = [
     path('api/export/inbound/', task_views.export_inbound_async, name='export_inbound_async'),
     path('api/export/purchase-plans/', task_views.export_purchase_plans_async, name='export_purchase_plans_async'),
     path('api/export/deliveries/', task_views.export_deliveries_async, name='export_deliveries_async'),
+    path('api/export/material-plans/', task_views.export_material_plans_async, name='export_material_plans_async'),
+    path('api/backup/', task_views.backup_data_async, name='backup_data_async'),
     # 操作日志
     path('logs/', views.log_list, name='log_list'),
     # 性能监控

@@ -10,11 +10,11 @@ echo -e "${GREEN}开始配置 Nginx 代理...${NC}"
 
 # 复制配置文件
 echo -e "${YELLOW}1. 复制 Nginx 配置文件...${NC}"
-sudo cp /home/abc/Project-Material-Management-System/material.sdyhjzgc.com.conf /etc/nginx/sites-available/
+sudo cp /home/abc/MiniErp/deploy/minierp.conf /etc/nginx/sites-available/
 
 # 创建符号链接
 echo -e "${YELLOW}2. 创建符号链接...${NC}"
-sudo ln -sf /etc/nginx/sites-available/material.sdyhjzgc.com.conf /etc/nginx/sites-enabled/
+sudo ln -sf /etc/nginx/sites-available/minierp.conf /etc/nginx/sites-enabled/
 
 # 检查 Nginx 配置
 echo -e "${YELLOW}3. 检查 Nginx 配置...${NC}"

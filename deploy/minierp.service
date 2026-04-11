@@ -1,0 +1,14 @@
+[Unit]
+Description=MiniErp 项目管理系统
+After=network.target
+
+[Service]
+User=abc
+Group=abc
+WorkingDirectory=/home/abc/MiniErp
+ExecStart=/home/abc/MiniErp/venv/bin/gunicorn --config /home/abc/MiniErp/gunicorn_config.py minierp.wsgi:application
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

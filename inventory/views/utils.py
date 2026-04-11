@@ -1,4 +1,3 @@
-import json
 import logging
 from datetime import datetime, date
 from decimal import Decimal, InvalidOperation
@@ -160,7 +159,7 @@ def generate_code(prefix, model_class, field='code'):
     在高并发场景下 select_for_update 仅锁定已有行，无法阻止其他事务
     同时插入新行。因此此函数在 IntegrityError 时自动重试。
     """
-    from django.db import transaction, IntegrityError
+    from django.db import transaction
 
     # 使用 all_objects（含软删除记录）避免编码冲突，
     # 若模型无 all_objects 则回退到默认 objects

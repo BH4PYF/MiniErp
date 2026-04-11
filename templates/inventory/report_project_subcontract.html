@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}项目分包分析{% endblock %}
+{% block page_title %}项目分包分析{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h5><i class="bi bi-clipboard-data"></i> 项目分包分析</h5>
+    <a href="{% url 'report_page' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> 返回报表</a>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+        <h6 class="mb-0">{{ project.name }} 分包分析</h6>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card border-primary">
+                    <div class="card-body">
+                        <h6 class="text-muted">合同总额</h6>
+                        <h4 class="text-primary">{{ contract_total|floatformat:2 }} 元</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <h6 class="text-muted">结算总额</h6>
+                        <h4 class="text-success">{{ settlement_total|floatformat:2 }} 元</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-warning">
+                    <div class="card-body">
+                        <h6 class="text-muted">未结算金额</h6>
+                        <h4 class="text-warning">{{ balance_total|floatformat:2 }} 元</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>分包商</th>
+                        <th>合同金额</th>
+                        <th>结算金额</th>
+                        <th>未结算金额</th>
+                        <th>占比</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for item in report_data %}
+                    <tr>
+                        <td>{{ item.subcontractor }}</td>
+                        <td class="text-primary">{{ item.contract_amount|floatformat:2 }}</td>
+                        <td class="text-success">{{ item.settlement_amount|floatformat:2 }}</td>
+                        <td class="text-warning">{{ item.balance|floatformat:2 }}</td>
+                        <td>{{ item.contract_amount|div:contract_total|mul:100|floatformat:1 }}%</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">暂无分包数据</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="table-primary">
+                        <th>合计</th>
+                        <th>{{ contract_total|floatformat:2 }}</th>
+                        <th>{{ settlement_total|floatformat:2 }}</th>
+                        <th>{{ balance_total|floatformat:2 }}</th>
+                        <th>100%</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div class="mt-4 text-end">
+            <a href="{% url 'report_project_subcontract' %}?project_id={{ project.id }}&date_from={{ date_from }}&date_to={{ date_to }}&export=excel" class="btn btn-outline-success">
+                <i class="bi bi-download"></i> 导出Excel
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

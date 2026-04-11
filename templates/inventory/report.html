@@ -45,7 +45,7 @@
         </div>
         <div class="col-md-4">
             <div class="card shadow-sm h-100">
-                <div class="card-header bg-warning text-white">
+                <div class="card-header bg-primary text-white">
                     <h6 class="mb-0"><i class="bi bi-truck"></i> 供应商采购分析</h6>
                 </div>
                 <div class="card-body">
@@ -67,14 +67,14 @@
                             <label class="form-label">结束日期</label>
                             <input type="date" class="form-control" name="date_to">
                         </div>
-                        <button type="submit" class="btn btn-warning w-100">查看采购分析</button>
+                        <button type="submit" class="btn btn-primary w-100">查看采购分析</button>
                     </form>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="card shadow-sm h-100">
-                <div class="card-header bg-success text-white">
+                <div class="card-header bg-primary text-white">
                     <h6 class="mb-0"><i class="bi bi-calendar-range"></i> 月度统计</h6>
                 </div>
                 <div class="card-body">
@@ -87,7 +87,89 @@
                             <label class="form-label">结束日期</label>
                             <input type="date" class="form-control" name="date_to">
                         </div>
-                        <button type="submit" class="btn btn-success w-100">查看月度统计</button>
+                        <button type="submit" class="btn btn-primary w-100">查看月度统计</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分包分析 -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="bi bi-people"></i> 项目分包分析</h6>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{% url 'report_project_subcontract' %}">
+                        <div class="mb-3">
+                            <label class="form-label">选择项目</label>
+                            <select class="form-select" name="project_id" required>
+                                <option value="">请选择项目</option>
+                                {% for project in projects %}
+                                <option value="{{ project.id }}">{{ project.code }} - {{ project.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">开始日期</label>
+                            <input type="date" class="form-control" name="date_from">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">结束日期</label>
+                            <input type="date" class="form-control" name="date_to">
+                        </div>
+                        <button type="submit" class="btn btn-info w-100">查看项目分包分析</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="bi bi-building"></i> 分包商分包分析</h6>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{% url 'report_subcontractor_analysis' %}">
+                        <div class="mb-3">
+                            <label class="form-label">选择分包商</label>
+                            <select class="form-select" name="subcontractor_id" required>
+                                <option value="">请选择分包商</option>
+                                {% for sub in subcontractors %}
+                                <option value="{{ sub.id }}">{{ sub.code }} - {{ sub.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">开始日期</label>
+                            <input type="date" class="form-control" name="date_from">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">结束日期</label>
+                            <input type="date" class="form-control" name="date_to">
+                        </div>
+                        <button type="submit" class="btn btn-info w-100">查看分包商分包分析</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="bi bi-calendar-month"></i> 月度分包查询</h6>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{% url 'report_monthly_subcontract' %}">
+                        <div class="mb-3">
+                            <label class="form-label">开始日期</label>
+                            <input type="date" class="form-control" name="date_from">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">结束日期</label>
+                            <input type="date" class="form-control" name="date_to">
+                        </div>
+                        <button type="submit" class="btn btn-info w-100">查看月度分包查询</button>
                     </form>
                 </div>
             </div>

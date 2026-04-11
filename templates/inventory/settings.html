@@ -244,6 +244,9 @@
                                     <i class="bi bi-cloud-download"></i> 导出数据备份
                                 </button>
                             </form>
+                            <button id="asyncBackupBtn" class="btn btn-outline-primary w-100">
+                                <i class="bi bi-clock"></i> 异步导出备份
+                            </button>
                             <a href="/admin/inventory/systemsetting/" class="btn btn-outline-secondary" target="_blank">
                                 <i class="bi bi-upload"></i> 导入恢复
                             </a>
@@ -681,6 +684,50 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
+// 异步备份功能
+document.addEventListener('DOMContentLoaded', function() {
+    const asyncBackupBtn = document.getElementById('asyncBackupBtn');
+    if (asyncBackupBtn) {
+        asyncBackupBtn.addEventListener('click', function() {
+            // 显示加载状态
+            const btn = this;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass"></i> 处理中...';
+            
+            // 发送异步备份请求
+            fetch('{% url "backup_data_async" %}', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 显示成功消息
+                    alert('备份任务已开始，您可以通过任务ID查询进度：' + data.task_id);
+                    // 跳转到任务状态页面
+                    window.location.href = `/api/tasks/${data.task_id}/status/`;
+                } else {
+                    // 显示错误消息
+                    alert('备份任务启动失败：' + data.error);
+                }
+            })
+            .catch(error => {
+                // 显示错误消息
+                alert('备份任务启动失败：' + error.message);
+            })
+            .finally(() => {
+                // 恢复按钮状态
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            });
+        });
+    }
+});
 
 </script>
 

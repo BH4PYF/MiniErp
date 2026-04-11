@@ -13,21 +13,30 @@ def dashboard(request):
         return redirect('measurement_list')
     
     today = date.today()
-    project_id = request.GET.get('project')
-    selected_project = None
-    selected_project_id = project_id
+    project_progress_id = request.GET.get('project_progress')
+    project_material_id = request.GET.get('project_material')
+    selected_project_progress = None
+    selected_project_material = None
+    selected_project_progress_id = project_progress_id
+    selected_project_material_id = project_material_id
     
     # 只返回前 50 条记录用于模板展示（避免大数据量）
     projects = Project.objects.filter(status__in=['active', 'pending']).order_by('-status', 'code')[:50]
     
-    if project_id:
+    if project_progress_id:
         try:
-            selected_project = Project.objects.get(id=project_id)
+            selected_project_progress = Project.objects.get(id=project_progress_id)
         except Project.DoesNotExist:
-            selected_project = None
+            selected_project_progress = None
+    
+    if project_material_id:
+        try:
+            selected_project_material = Project.objects.get(id=project_material_id)
+        except Project.DoesNotExist:
+            selected_project_material = None
     
     # 构建缓存键
-    cache_key = f'dashboard_stats_{today}_{project_id or "all"}'
+    cache_key = f'dashboard_stats_{today}_{project_progress_id or "all"}_{project_material_id or "all"}'
     stats = cache.get(cache_key)
 
     if stats is None:
@@ -55,11 +64,11 @@ def dashboard(request):
         
         # 项目进度计算
         project_progress = 0
-        if selected_project:
+        if selected_project_progress:
             from django.db.models import Sum
-            budget_total = selected_project.budgets.aggregate(total=Sum('budget_items__total_amount'))['total'] or 0
+            budget_total = selected_project_progress.budgets.aggregate(total=Sum('budget_items__total_amount'))['total'] or 0
             measurement_total = 0
-            contracts = selected_project.contracts.all()
+            contracts = selected_project_progress.contracts.all()
             for contract in contracts:
                 contract_measurement = contract.measurements.aggregate(
                     total=Sum('current_value')
@@ -87,13 +96,13 @@ def dashboard(request):
         # 材料节超计算
         material_variance = 0
         material_variance_percentage = 0
-        if selected_project:
+        if selected_project_material:
             # 计算入库总额与材料计划的差值
             # 获取项目的所有入库总额
-            inbound_total = selected_project.inbound_records.aggregate(total=Sum('total_amount'))['total'] or 0
+            inbound_total = selected_project_material.inbound_records.aggregate(total=Sum('total_amount'))['total'] or 0
             # 获取项目的所有材料计划总额
             from .material_plan import MaterialPlan
-            material_plan_total = selected_project.material_plans.aggregate(total=Sum('total_amount'))['total'] or 0
+            material_plan_total = selected_project_material.material_plans.aggregate(total=Sum('total_amount'))['total'] or 0
             material_variance = inbound_total - material_plan_total
             if material_plan_total > 0:
                 material_variance_percentage = (material_variance / material_plan_total) * 100
@@ -150,6 +159,8 @@ def dashboard(request):
         'suppliers': suppliers,
         'today': today,
         'stats': stats,
-        'selected_project': selected_project,
-        'selected_project_id': selected_project_id,
+        'selected_project_progress': selected_project_progress,
+        'selected_project_progress_id': selected_project_progress_id,
+        'selected_project_material': selected_project_material,
+        'selected_project_material_id': selected_project_material_id,
     })

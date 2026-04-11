@@ -31,7 +31,13 @@
             </select>
         </div>
         <div class="col-auto">
-            <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i> 查询</button>
+            <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i> 筛选</button>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'purchase_plan_list' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-x-circle"></i> 重置</a>
+        </div>
+        <div class="col-auto ms-auto">
+            <a href="{% url 'export_purchase_plans' %}?status={{ status }}&project={{ project_id }}&q={{ q }}" class="btn btn-sm btn-outline-success"><i class="bi bi-download"></i> 批量导出</a>
         </div>
     </form>
 </div>

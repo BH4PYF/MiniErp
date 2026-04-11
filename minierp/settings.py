@@ -155,9 +155,19 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', 'OPTIONS': {'min_length': 8}},
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+    # 自定义密码验证器，要求密码包含大小写字母、数字和特殊字符
+    {
+        'NAME': 'minierp.validators.CustomPasswordValidator',
+        'OPTIONS': {
+            'min_length': 12,
+            'require_uppercase': True,
+            'require_lowercase': True,
+            'require_digit': True,
+            'require_special': True,
+        }
+    },
 ]
 
 LANGUAGE_CODE = os.getenv('LANGUAGE_CODE', 'zh-hans')
@@ -165,9 +175,15 @@ TIME_ZONE = os.getenv('TIME_ZONE', 'Asia/Shanghai')
 USE_I18N = True
 USE_TZ = True  # 启用时区支持，Django 官方建议，跨时区部署必备
 
-STATIC_URL = '/static/'
+# 静态文件配置
+STATIC_URL = os.getenv('STATIC_URL', '/static/')
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# 静态文件CDN配置
+if not DEBUG:
+    # 生产环境使用本地静态文件路径
+    STATIC_URL = '/static/'
 
 # 静态文件压缩配置
 STATICFILES_FINDERS = [
@@ -293,6 +309,8 @@ CSRF_TRUSTED_ORIGINS = [
     'https://localhost',
     'http://127.0.0.1',
     'https://127.0.0.1',
+    'https://erp.sdyhjzgc.com',
+    'http://erp.sdyhjzgc.com',
 ]
 
 # ---------- 测试环境优化 ----------

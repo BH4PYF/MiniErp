@@ -22,7 +22,7 @@ fi
 # 获取当前用户名
 REAL_USER=${SUDO_USER:-$USER}
 HOME_DIR=$(eval echo ~$REAL_USER)
-APP_DIR="$HOME_DIR/Project-Material-Management-System"
+APP_DIR="$HOME_DIR/MiniErp"
 
 echo -e "\n${GREEN}[1/5] 配置 Nginx HTTP...${NC}"
 NGINX_CONF="/etc/nginx/sites-available/material-system-test.conf"

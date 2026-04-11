@@ -6,7 +6,7 @@ from datetime import datetime
 from celery import shared_task
 from django.utils import timezone
 
-from .models import Material, InboundRecord, PurchasePlan, Delivery, Category, Supplier
+from .models import Material, InboundRecord, PurchasePlan, Delivery, Category, Supplier, MaterialPlan
 from .views.utils import create_excel_workbook, set_column_widths
 
 logger = logging.getLogger('inventory')
@@ -315,6 +315,137 @@ def export_deliveries(self, user_id, supplier_id=None):
         
     except Exception as e:
         logger.error(f'导出发货单Excel失败: {str(e)}', exc_info=True)
+        return {
+            'success': False,
+            'error': str(e)
+        }
+
+
+@shared_task(bind=True, name='inventory.tasks.export_material_plans')
+def export_material_plans(self, user_id, project_id=None, search_query=None, start_date=None, end_date=None):
+    """异步导出材料计划Excel"""
+    logger.info(f'开始导出材料计划Excel，用户ID: {user_id}')
+    
+    try:
+        from django.contrib.auth.models import User
+        from django.db.models import Q
+        user = User.objects.get(id=user_id)
+        
+        headers = [
+            '计划编号', '项目', '计划日期', '计划总金额', '创建人', '创建时间'
+        ]
+        wb, ws, _ = create_excel_workbook('材料计划列表', headers, style='primary')
+        
+        # 查询材料计划
+        plans = MaterialPlan.objects.select_related(
+            'project', 'created_by'
+        ).filter(is_deleted=False).order_by('-created_at')
+        
+        if search_query:
+            plans = plans.filter(Q(plan_number__icontains=search_query) | Q(project__name__icontains=search_query))
+        if project_id:
+            plans = plans.filter(project_id=project_id)
+        if start_date:
+            plans = plans.filter(plan_date__gte=start_date)
+        if end_date:
+            plans = plans.filter(plan_date__lte=end_date)
+        
+        MAX_EXPORT_ROWS = 10000
+        plans = plans[:MAX_EXPORT_ROWS]
+        
+        row = 2
+        for p in plans:
+            ws.cell(row=row, column=1, value=p.plan_number)
+            ws.cell(row=row, column=2, value=f"{p.project.code} - {p.project.name}")
+            ws.cell(row=row, column=3, value=str(p.plan_date))
+            ws.cell(row=row, column=4, value=float(p.total_amount))
+            ws.cell(row=row, column=5, value=p.created_by.username if p.created_by else '-')
+            ws.cell(row=row, column=6, value=str(p.created_at.strftime('%Y-%m-%d %H:%M')))
+            row += 1
+        
+        set_column_widths(ws, [15, 25, 12, 12, 12, 15])
+        
+        # 保存文件
+        import os
+        from django.conf import settings
+        temp_dir = os.path.join(settings.MEDIA_ROOT, 'exports')
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        filename = f'material_plans_{timezone.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        file_path = os.path.join(temp_dir, filename)
+        wb.save(file_path)
+        
+        logger.info(f'材料计划Excel导出完成，文件路径: {file_path}')
+        return {
+            'success': True,
+            'filename': filename,
+            'file_path': file_path,
+            'download_url': f'/media/exports/{filename}'
+        }
+        
+    except Exception as e:
+        logger.error(f'导出材料计划Excel失败: {str(e)}', exc_info=True)
+        return {
+            'success': False,
+            'error': str(e)
+        }
+
+
+@shared_task(bind=True, name='inventory.tasks.backup_data')
+def backup_data_task(self, user_id):
+    """异步备份系统数据"""
+    logger.info(f'开始备份系统数据，用户ID: {user_id}')
+    
+    try:
+        from django.contrib.auth.models import User
+        import json
+        from django.http import HttpResponse
+        from django.utils.http import make_attachment_disposition
+        from django.db.models import Model
+        from decimal import Decimal
+        
+        user = User.objects.get(id=user_id)
+        
+        MAX_BACKUP_ROWS = 50000
+        
+        def decimal_default(obj):
+            if isinstance(obj, Decimal):
+                return float(obj)
+            return obj
+        
+        data = {
+            'timestamp': timezone.now().isoformat(),
+            'projects': list(Project.all_objects.values()[:MAX_BACKUP_ROWS]),
+            'categories': list(Category.all_objects.values()[:MAX_BACKUP_ROWS]),
+            'materials': list(Material.objects.values()[:MAX_BACKUP_ROWS]),
+            'suppliers': list(Supplier.all_objects.values()[:MAX_BACKUP_ROWS]),
+            'inbound_records': list(InboundRecord.all_objects.values()[:MAX_BACKUP_ROWS]),
+            'purchase_plans': list(PurchasePlan.all_objects.values()[:MAX_BACKUP_ROWS]),
+            'users': list(User.objects.values('id', 'username', 'first_name', 'last_name', 'email', 'is_active', 'is_superuser')[:MAX_BACKUP_ROWS]),
+        }
+        
+        # 保存文件
+        import os
+        from django.conf import settings
+        temp_dir = os.path.join(settings.MEDIA_ROOT, 'backups')
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        filename = f'backup_{timezone.now().strftime("%Y%m%d_%H%M%S")}.json'
+        file_path = os.path.join(temp_dir, filename)
+        
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, default=decimal_default, ensure_ascii=False, indent=2)
+        
+        logger.info(f'系统数据备份完成，文件路径: {file_path}')
+        return {
+            'success': True,
+            'filename': filename,
+            'file_path': file_path,
+            'download_url': f'/media/backups/{filename}'
+        }
+        
+    except Exception as e:
+        logger.error(f'系统数据备份失败: {str(e)}', exc_info=True)
         return {
             'success': False,
             'error': str(e)

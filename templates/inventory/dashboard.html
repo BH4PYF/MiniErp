@@ -108,9 +108,20 @@ body { font-size: 16px; }
                 <h6 class="mb-0"><i class="bi bi-progress"></i> 项目进度</h6>
             </div>
             <div class="card-body">
+                <div class="w-100 mb-3">
+                    <form method="get" action="{% url 'dashboard' %}" class="d-flex align-items-center">
+                        <select class="form-control form-control-sm mr-2" id="project_progress" name="project_progress" placeholder="选择项目">
+                            <option value="">全部项目</option>
+                            {% for project in projects %}
+                            <option value="{{ project.id }}" {% if selected_project_progress_id == project.id|stringformat:"s" %}selected{% endif %}>{{ project.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-primary">筛选</button>
+                    </form>
+                </div>
                 <div class="w-100">
                     <div class="d-flex justify-content-between mb-2">
-                        <span>项目：{{ selected_project.name|default:"全部项目" }}</span>
+                        <span>当前项目：{{ selected_project_progress.name|default:"全部项目" }}</span>
                         <span>{{ stats.project_progress|floatformat:1 }}%</span>
                     </div>
                     <div class="progress">
@@ -129,9 +140,20 @@ body { font-size: 16px; }
                 <h6 class="mb-0"><i class="bi bi-balance-scale"></i> 材料节超</h6>
             </div>
             <div class="card-body">
+                <div class="w-100 mb-3">
+                    <form method="get" action="{% url 'dashboard' %}" class="d-flex align-items-center">
+                        <select class="form-control form-control-sm mr-2" id="project_material" name="project_material" placeholder="选择项目">
+                            <option value="">全部项目</option>
+                            {% for project in projects %}
+                            <option value="{{ project.id }}" {% if selected_project_material_id == project.id|stringformat:"s" %}selected{% endif %}>{{ project.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-success">筛选</button>
+                    </form>
+                </div>
                 <div class="w-100">
                     <div class="d-flex justify-content-between mb-2">
-                        <span>项目：{{ selected_project.name|default:"全部项目" }}</span>
+                        <span>当前项目：{{ selected_project_material.name|default:"全部项目" }}</span>
                         {% if stats.material_variance < 0 %}
                         <span class="saving">节约 ¥{{ stats.material_variance|floatformat:2|slice:"1:" }}</span>
                         {% else %}
@@ -155,37 +177,5 @@ body { font-size: 16px; }
     </div>
 </div>
 
-<div class="row g-3 mt-3">
-    <!-- 项目筛选 -->
-    <div class="col-12">
-        <div class="card shadow-sm">
-            <div class="card-header bg-light">
-                <h6 class="mb-0"><i class="bi bi-filter"></i> 项目筛选</h6>
-            </div>
-            <div class="card-body">
-                <form method="get" action="">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="project">选择项目</label>
-                                <select class="form-control" id="project" name="project">
-                                    <option value="">全部项目</option>
-                                    {% for project in projects %}
-                                    <option value="{{ project.id }}" {% if selected_project_id == project.id|stringformat:"s" %}selected{% endif %}>{{ project.name }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-4 d-flex align-items-end">
-                            <button type="submit" class="btn btn-primary w-100">应用筛选</button>
-                        </div>
-                        <div class="col-md-4 d-flex align-items-end">
-                            <a href="/" class="btn btn-secondary w-100">重置</a>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+
 {% endblock %}
