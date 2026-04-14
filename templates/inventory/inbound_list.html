@@ -60,7 +60,7 @@
     <h5><i class="bi bi-box-arrow-in-down"></i> 入库管理</h5>
     <div>
         <button class="btn btn-sm btn-outline-primary me-2" onclick="openColumnEditor()"><i class="bi bi-columns"></i> 编辑列</button>
-        <a href="{% url 'export_excel' %}?type=inbound&date_from={{ date_from|default:''|urlencode }}&date_to={{ date_to|default:''|urlencode }}&project={{ selected_project|default:''|urlencode }}&material={{ selected_material|default:''|urlencode }}&supplier={{ selected_supplier|default:''|urlencode }}" class="btn btn-sm btn-outline-success"><i class="bi bi-download"></i> 批量导出</a>
+        <a href="{% url 'export_excel' %}?type=inbound&date_from={{ date_from|default:''|urlencode }}&date_to={{ date_to|default:''|urlencode }}&project={{ selected_project|default:''|urlencode }}&material={{ selected_material|default:''|urlencode }}&supplier={{ selected_supplier|default:''|urlencode }}" class="btn btn-sm btn-outline-success"><i class="bi bi-download"></i> 导出Excel</a>
         {% if request.user.profile.is_admin or request.user.profile.is_management %}        {% endif %}
     </div>
 </div>

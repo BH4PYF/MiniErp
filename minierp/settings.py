@@ -60,14 +60,23 @@ SECRET_KEY = _secret_key
 # ALLOWED_HOSTS 配置：支持通配符和具体 IP
 # 开发环境：允许所有主机访问（仅限 DEBUG=True）
 # 生产环境：必须明确指定允许的域名/IP
+# 安全配置：根据环境设置允许的主机
 if DEBUG:
-    ALLOWED_HOSTS = ['*']  # 开发环境允许所有主机
+    # 开发环境：允许所有主机访问
+    ALLOWED_HOSTS = ['*']
 else:
+    # 生产环境：只允许指定的域名和IP访问
     ALLOWED_HOSTS = [
-        ip.strip()
-        for ip in os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
-        if ip.strip()
+        'erp.sdyhjzgc.com',
+        'www.erp.sdyhjzgc.com',
+        'localhost',
+        '127.0.0.1',
+        '::1',
     ]
+    # 从环境变量读取额外的允许主机
+    additional_hosts = os.getenv('ALLOWED_HOSTS_EXTRA', '')
+    if additional_hosts:
+        ALLOWED_HOSTS.extend([host.strip() for host in additional_hosts.split(',') if host.strip()])
 
 # 内部 IP 列表（用于 django-debug-toolbar）
 INTERNAL_IPS = [
@@ -345,6 +354,7 @@ if not DEBUG and not TESTING:
 if not DEBUG:
     # 静态资源版本化：collectstatic 时为文件名追加内容 hash，
     # 避免部署更新后浏览器缓存导致用户看到旧版界面
+    # 使用 ManifestStaticFilesStorage 进行版本化
     STORAGES = {
         "staticfiles": {
             "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",

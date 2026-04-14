@@ -7,8 +7,14 @@ set -e
 # 配置
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 BACKUP_DIR="$PROJECT_DIR/backups"
-DB_FILE="$PROJECT_DIR/db.sqlite3"
 RETENTION_DAYS=${1:-30}  # 默认保留30天
+
+# 从环境变量获取数据库配置
+DB_NAME=${DB_NAME:-"material_system"}
+DB_USER=${DB_USER:-"postgres"}
+DB_PASSWORD=${DB_PASSWORD:-""}
+DB_HOST=${DB_HOST:-"127.0.0.1"}
+DB_PORT=${DB_PORT:-"5432"}
 
 # 颜色输出
 GREEN='\033[0;32m'
@@ -19,20 +25,14 @@ NC='\033[0m'
 # 创建备份目录
 mkdir -p "$BACKUP_DIR"
 
-# 检查数据库文件是否存在
-if [ ! -f "$DB_FILE" ]; then
-    echo -e "${RED}错误: 数据库文件 $DB_FILE 不存在${NC}"
-    exit 1
-fi
-
-# 生成备份文件名 (格式: db-YYYYMMDD-HHMMSS.sqlite3)
+# 生成备份文件名 (格式: db-YYYYMMDD-HHMMSS.sql)
 TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
-BACKUP_FILE="$BACKUP_DIR/db-$TIMESTAMP.sqlite3"
+BACKUP_FILE="$BACKUP_DIR/db-$TIMESTAMP.sql"
 
-# 执行备份 (用cp而不是sqlite3命令，避免锁表问题)
-cp "$DB_FILE" "$BACKUP_FILE"
+# 执行备份
+PGPASSWORD="$DB_PASSWORD" pg_dump -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$BACKUP_FILE"
 
-# 压缩备份 (可选)
+# 压缩备份
 gzip -f "$BACKUP_FILE"
 BACKUP_FILE_GZ="$BACKUP_FILE.gz"
 
@@ -43,10 +43,10 @@ echo -e "${GREEN}✅ 备份成功: $BACKUP_FILE_GZ ($FILESIZE)${NC}"
 
 # 清理旧备份
 echo -e "${YELLOW}清理 $RETENTION_DAYS 天前的备份...${NC}"
-find "$BACKUP_DIR" -name "db-*.sqlite3.gz" -type f -mtime +$RETENTION_DAYS -delete
+find "$BACKUP_DIR" -name "db-*.sql.gz" -type f -mtime +$RETENTION_DAYS -delete
 
 # 统计剩余备份
-BACKUP_COUNT=$(find "$BACKUP_DIR" -name "db-*.sqlite3.gz" | wc -l)
+BACKUP_COUNT=$(find "$BACKUP_DIR" -name "db-*.sql.gz" | wc -l)
 TOTAL_SIZE=$(du -sh "$BACKUP_DIR" | cut -f1)
 
 echo -e "${GREEN}📊 当前备份: $BACKUP_COUNT 个, 总大小: $TOTAL_SIZE${NC}"

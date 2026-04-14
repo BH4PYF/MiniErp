@@ -176,6 +176,11 @@ class Project(SoftDeleteModel):
         # 从结算记录中统计分包产值
         total_value = self.settlements.aggregate(t=Sum('final_amount'))['t'] or Decimal('0')
         return total_value
+    
+    @property
+    def total_settlement(self):
+        """结算总额"""
+        return self.get_subcontract_value()
 
 
 class Subcontractor(SoftDeleteModel):
@@ -662,6 +667,8 @@ class PurchasePlan(SoftDeleteModel):
     project = models.ForeignKey(Project, on_delete=models.PROTECT, verbose_name='所属项目', related_name='purchase_plans')
     material = models.ForeignKey(Material, on_delete=models.PROTECT, verbose_name='材料', related_name='purchase_plans')
     material_plan = models.ForeignKey('MaterialPlan', on_delete=models.SET_NULL, verbose_name='关联材料计划', related_name='purchase_plans', null=True, blank=True)
+    plan_quantity = models.DecimalField('计划数量', max_digits=12, decimal_places=2, default=Decimal('0'))
+    inbound_quantity = models.DecimalField('已入库数量', max_digits=12, decimal_places=2, default=Decimal('0'))
     quantity = models.DecimalField('采购数量', max_digits=12, decimal_places=2)
     spec = models.CharField('规格型号', max_length=200, default='')
     unit_price = models.DecimalField('预计单价', max_digits=12, decimal_places=2, default=Decimal('0'))

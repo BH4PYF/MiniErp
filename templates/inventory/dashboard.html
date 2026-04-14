@@ -3,179 +3,410 @@
 {% block page_title %}{{ company_name|default:"系统首页" }}{% endblock %}
 {% block extra_css %}
 <style>
-/* 加大字体 */
+/* 基础样式 */
 body { font-size: 16px; }
-.card-header h6, .page-header h5 { font-size: 1.2rem; }
+
+/* 卡片容器 */
+.dashboard-container {
+    animation: fadeIn 0.6s ease-in-out;
+}
+
+/* 卡片样式 */
+.dashboard-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+/* 卡片头部 */
+.card-header {
+    border-radius: 12px 12px 0 0;
+    padding: 1rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.card-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.card-header:hover::before {
+    left: 100%;
+}
+
+.card-header h6 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+    position: relative;
+    z-index: 1;
+}
+
+/* 卡片内容 */
 .card-body {
-    min-height: 150px;
+    min-height: 180px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    padding: 1.5rem;
+    position: relative;
 }
+
+/* 卡片图标 */
 .card-icon {
-    font-size: 2.5rem;
-    margin-bottom: 10px;
+    font-size: 3rem;
+    margin-bottom: 15px;
+    transition: transform 0.3s ease;
+    opacity: 0.9;
 }
+
+.dashboard-card:hover .card-icon {
+    transform: scale(1.1);
+}
+
+/* 卡片数值 */
 .card-value {
-    font-size: 2rem;
+    font-size: 2.2rem;
     font-weight: bold;
-    margin-bottom: 5px;
+    margin-bottom: 8px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    animation: countUp 2s ease-out;
 }
+
+/* 卡片标签 */
 .card-label {
     font-size: 1rem;
     color: #6c757d;
+    text-align: center;
 }
+
+/* 进度条样式 */
 .progress {
-    height: 20px;
-    margin-top: 10px;
+    height: 24px;
+    margin-top: 12px;
     width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.05);
 }
+
 .progress-bar {
-    font-weight: bold;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border-radius: 12px;
+    transition: width 1.5s ease-out;
+    position: relative;
+    overflow: hidden;
 }
+
+.progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+/* 状态标签 */
 .saving {
-    color: green;
+    color: #28a745;
     font-weight: bold;
+    animation: pulse 2s infinite;
 }
+
 .exceeding {
-    color: red;
+    color: #dc3545;
     font-weight: bold;
+    animation: pulse 2s infinite;
+}
+
+/* 表单样式 */
+.form-control.form-control-sm {
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    transition: all 0.3s ease;
+}
+
+.form-control.form-control-sm:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* 按钮样式 */
+.btn {
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes countUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* 卡片颜色方案 */
+.card-primary {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+}
+
+.card-success {
+    background: linear-gradient(135deg, #28a745, #1e7e34);
+}
+
+.card-info {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+}
+
+.card-warning {
+    background: linear-gradient(135deg, #ffc107, #d39e00);
+}
+
+/* 移动端响应式优化 */
+@media (max-width: 768px) {
+    .card-body {
+        min-height: 140px;
+        padding: 1.25rem;
+    }
+    
+    .card-icon {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+    }
+    
+    .card-value {
+        font-size: 1.8rem;
+        margin-bottom: 6px;
+    }
+    
+    .card-label {
+        font-size: 0.9rem;
+    }
+    
+    .card-header h6 {
+        font-size: 1rem;
+    }
+    
+    .progress {
+        height: 20px;
+        margin-top: 10px;
+    }
+    
+    .progress-bar {
+        font-size: 0.75rem;
+    }
+    
+    .form-control.form-control-sm {
+        font-size: 14px;
+    }
+    
+    .btn.btn-sm {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .row {
+        gap: 1rem;
+    }
+}
+
+/* 小屏幕优化 */
+@media (max-width: 576px) {
+    .card-body {
+        min-height: 120px;
+        padding: 1rem;
+    }
+    
+    .card-icon {
+        font-size: 2rem;
+        margin-bottom: 8px;
+    }
+    
+    .card-value {
+        font-size: 1.5rem;
+        margin-bottom: 4px;
+    }
+    
+    .card-label {
+        font-size: 0.85rem;
+    }
 }
 </style>
 {% endblock %}
 {% block content %}
-<div class="row g-3">
-    <!-- 项目数量 -->
-    <div class="col-lg-3 col-md-6">
-        <div class="card shadow-sm border-primary">
-            <div class="card-header bg-primary text-white">
-                <h6 class="mb-0"><i class="bi bi-folder"></i> 项目数量</h6>
+<div class="dashboard-container">
+    <div class="row g-4 mb-4">
+        <!-- 项目数量 -->
+        <div class="col-lg-3 col-md-6 col-sm-12">
+            <div class="card dashboard-card shadow-lg">
+                <div class="card-header card-primary text-white">
+                    <h6 class="mb-0"><i class="bi bi-folder me-2"></i> 项目数量</h6>
+                </div>
+                <div class="card-body">
+                    <div class="card-icon text-primary"><i class="bi bi-building"></i></div>
+                    <div class="card-value text-primary">{{ stats.projects_count }}</div>
+                    <div class="card-label">个项目</div>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="card-icon text-primary"><i class="bi bi-building"></i></div>
-                <div class="card-value text-primary">{{ stats.projects_count }}</div>
-                <div class="card-label">个项目</div>
+        </div>
+        
+        <!-- 合同数量 -->
+        <div class="col-lg-3 col-md-6 col-sm-12">
+            <div class="card dashboard-card shadow-lg">
+                <div class="card-header card-success text-white">
+                    <h6 class="mb-0"><i class="bi bi-file-text me-2"></i> 合同数量</h6>
+                </div>
+                <div class="card-body">
+                    <div class="card-icon text-success"><i class="bi bi-file-earmark-text"></i></div>
+                    <div class="card-value text-success">{{ stats.contracts_count }}</div>
+                    <div class="card-label">份合同</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 材料总额 -->
+        <div class="col-lg-3 col-md-6 col-sm-12">
+            <div class="card dashboard-card shadow-lg">
+                <div class="card-header card-info text-white">
+                    <h6 class="mb-0"><i class="bi bi-box-seam me-2"></i> 材料总额</h6>
+                </div>
+                <div class="card-body">
+                    <div class="card-icon text-info"><i class="bi bi-box"></i></div>
+                    <div class="card-value text-info">¥{{ stats.materials_total|floatformat:2 }}</div>
+                    <div class="card-label">元</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 结算总额 -->
+        <div class="col-lg-3 col-md-6 col-sm-12">
+            <div class="card dashboard-card shadow-lg">
+                <div class="card-header card-warning text-white">
+                    <h6 class="mb-0"><i class="bi bi-calculator me-2"></i> 结算总额</h6>
+                </div>
+                <div class="card-body">
+                    <div class="card-icon text-warning"><i class="bi bi-cash"></i></div>
+                    <div class="card-value text-warning">¥{{ stats.settlements_total|floatformat:2 }}</div>
+                    <div class="card-label">元</div>
+                </div>
             </div>
         </div>
     </div>
-    <!-- 合同数量 -->
-    <div class="col-lg-3 col-md-6">
-        <div class="card shadow-sm border-success">
-            <div class="card-header bg-success text-white">
-                <h6 class="mb-0"><i class="bi bi-file-text"></i> 合同数量</h6>
-            </div>
-            <div class="card-body">
-                <div class="card-icon text-success"><i class="bi bi-file-earmark-text"></i></div>
-                <div class="card-value text-success">{{ stats.contracts_count }}</div>
-                <div class="card-label">份合同</div>
+
+    <div class="row g-4">
+        <!-- 项目进度 -->
+        <div class="col-lg-6 col-md-12 col-sm-12">
+            <div class="card dashboard-card shadow-lg">
+                <div class="card-header card-primary text-white">
+                    <h6 class="mb-0"><i class="bi bi-progress me-2"></i> 项目进度</h6>
+                </div>
+                <div class="card-body">
+                    <div class="w-100 mb-4">
+                        <form method="get" action="{% url 'dashboard' %}" class="d-flex flex-wrap align-items-center gap-2">
+                            <select class="form-control form-control-sm flex-grow-1" id="project_progress" name="project_progress" placeholder="选择项目">
+                                <option value="">全部项目</option>
+                                {% for project in projects %}
+                                <option value="{{ project.id }}" {% if selected_project_progress_id == project.id|stringformat:"s" %}selected{% endif %}>{{ project.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-primary">筛选</button>
+                        </form>
+                    </div>
+                    <div class="w-100">
+                        <div class="d-flex justify-content-between mb-3">
+                            <span class="font-weight-medium">当前项目：{{ selected_project_progress.name|default:"全部项目" }}</span>
+                            <span class="font-weight-bold text-primary">{{ stats.project_progress|floatformat:1 }}%</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ stats.project_progress|floatformat:1 }}%" aria-valuenow="{{ stats.project_progress|floatformat:1 }}" aria-valuemin="0" aria-valuemax="100">
+                                {{ stats.project_progress|floatformat:1 }}%
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-    <!-- 材料总额 -->
-    <div class="col-lg-3 col-md-6">
-        <div class="card shadow-sm border-info">
-            <div class="card-header bg-info text-white">
-                <h6 class="mb-0"><i class="bi bi-box-seam"></i> 材料总额</h6>
-            </div>
-            <div class="card-body">
-                <div class="card-icon text-info"><i class="bi bi-box"></i></div>
-                <div class="card-value text-info">¥{{ stats.materials_total|floatformat:2 }}</div>
-                <div class="card-label">元</div>
-            </div>
-        </div>
-    </div>
-    <!-- 结算总额 -->
-    <div class="col-lg-3 col-md-6">
-        <div class="card shadow-sm border-warning">
-            <div class="card-header bg-warning text-white">
-                <h6 class="mb-0"><i class="bi bi-calculator"></i> 结算总额</h6>
-            </div>
-            <div class="card-body">
-                <div class="card-icon text-warning"><i class="bi bi-cash"></i></div>
-                <div class="card-value text-warning">¥{{ stats.settlements_total|floatformat:2 }}</div>
-                <div class="card-label">元</div>
+        
+        <!-- 材料节超 -->
+        <div class="col-lg-6 col-md-12 col-sm-12">
+            <div class="card dashboard-card shadow-lg">
+                <div class="card-header card-success text-white">
+                    <h6 class="mb-0"><i class="bi bi-balance-scale me-2"></i> 材料节超</h6>
+                </div>
+                <div class="card-body">
+                    <div class="w-100 mb-4">
+                        <form method="get" action="{% url 'dashboard' %}" class="d-flex flex-wrap align-items-center gap-2">
+                            <select class="form-control form-control-sm flex-grow-1" id="project_material" name="project_material" placeholder="选择项目">
+                                <option value="">全部项目</option>
+                                {% for project in projects %}
+                                <option value="{{ project.id }}" {% if selected_project_material_id == project.id|stringformat:"s" %}selected{% endif %}>{{ project.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-success">筛选</button>
+                        </form>
+                    </div>
+                    <div class="w-100">
+                        <div class="d-flex justify-content-between mb-3">
+                            <span class="font-weight-medium">当前项目：{{ selected_project_material.name|default:"全部项目" }}</span>
+                            {% if stats.material_variance < 0 %}
+                            <span class="saving">节约 ¥{{ stats.material_variance|floatformat:2|slice:"1:" }}</span>
+                            {% else %}
+                            <span class="exceeding">超额 ¥{{ stats.material_variance|floatformat:2 }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="progress">
+                            {% if stats.material_variance < 0 %}
+                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ stats.material_variance_percentage|floatformat:0|slice:"1:" }}%" aria-valuenow="{{ stats.material_variance_percentage|floatformat:0|slice:"1:" }}" aria-valuemin="0" aria-valuemax="100">
+                                节约 {{ stats.material_variance_percentage|floatformat:1|slice:"1:" }}%
+                            </div>
+                            {% else %}
+                            <div class="progress-bar bg-danger" role="progressbar" style="width: {{ stats.material_variance_percentage|floatformat:0 }}%" aria-valuenow="{{ stats.material_variance_percentage|floatformat:0 }}" aria-valuemin="0" aria-valuemax="100">
+                                超额 {{ stats.material_variance_percentage|floatformat:1 }}%
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
-
-<div class="row g-3 mt-3">
-    <!-- 项目进度 -->
-    <div class="col-lg-6 col-md-12">
-        <div class="card shadow-sm border-primary">
-            <div class="card-header bg-primary text-white">
-                <h6 class="mb-0"><i class="bi bi-progress"></i> 项目进度</h6>
-            </div>
-            <div class="card-body">
-                <div class="w-100 mb-3">
-                    <form method="get" action="{% url 'dashboard' %}" class="d-flex align-items-center">
-                        <select class="form-control form-control-sm mr-2" id="project_progress" name="project_progress" placeholder="选择项目">
-                            <option value="">全部项目</option>
-                            {% for project in projects %}
-                            <option value="{{ project.id }}" {% if selected_project_progress_id == project.id|stringformat:"s" %}selected{% endif %}>{{ project.name }}</option>
-                            {% endfor %}
-                        </select>
-                        <button type="submit" class="btn btn-sm btn-primary">筛选</button>
-                    </form>
-                </div>
-                <div class="w-100">
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>当前项目：{{ selected_project_progress.name|default:"全部项目" }}</span>
-                        <span>{{ stats.project_progress|floatformat:1 }}%</span>
-                    </div>
-                    <div class="progress">
-                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ stats.project_progress|floatformat:1 }}%" aria-valuenow="{{ stats.project_progress|floatformat:1 }}" aria-valuemin="0" aria-valuemax="100">
-                            {{ stats.project_progress|floatformat:1 }}%
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- 材料节超 -->
-    <div class="col-lg-6 col-md-12">
-        <div class="card shadow-sm border-success">
-            <div class="card-header bg-success text-white">
-                <h6 class="mb-0"><i class="bi bi-balance-scale"></i> 材料节超</h6>
-            </div>
-            <div class="card-body">
-                <div class="w-100 mb-3">
-                    <form method="get" action="{% url 'dashboard' %}" class="d-flex align-items-center">
-                        <select class="form-control form-control-sm mr-2" id="project_material" name="project_material" placeholder="选择项目">
-                            <option value="">全部项目</option>
-                            {% for project in projects %}
-                            <option value="{{ project.id }}" {% if selected_project_material_id == project.id|stringformat:"s" %}selected{% endif %}>{{ project.name }}</option>
-                            {% endfor %}
-                        </select>
-                        <button type="submit" class="btn btn-sm btn-success">筛选</button>
-                    </form>
-                </div>
-                <div class="w-100">
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>当前项目：{{ selected_project_material.name|default:"全部项目" }}</span>
-                        {% if stats.material_variance < 0 %}
-                        <span class="saving">节约 ¥{{ stats.material_variance|floatformat:2|slice:"1:" }}</span>
-                        {% else %}
-                        <span class="exceeding">超额 ¥{{ stats.material_variance|floatformat:2 }}</span>
-                        {% endif %}
-                    </div>
-                    <div class="progress">
-                        {% if stats.material_variance < 0 %}
-                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ stats.material_variance_percentage|floatformat:0|slice:"1:" }}%" aria-valuenow="{{ stats.material_variance_percentage|floatformat:0|slice:"1:" }}" aria-valuemin="0" aria-valuemax="100">
-                            节约 {{ stats.material_variance_percentage|floatformat:1|slice:"1:" }}%
-                        </div>
-                        {% else %}
-                        <div class="progress-bar bg-danger" role="progressbar" style="width: {{ stats.material_variance_percentage|floatformat:0 }}%" aria-valuenow="{{ stats.material_variance_percentage|floatformat:0 }}" aria-valuemin="0" aria-valuemax="100">
-                            超额 {{ stats.material_variance_percentage|floatformat:1 }}%
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-
 {% endblock %}

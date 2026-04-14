@@ -26,11 +26,11 @@ APP_DIR="$HOME_DIR/MiniErp"
 
 echo -e "\n${GREEN}[1/6] 检查 SSL 证书...${NC}"
 SSL_DIR="/etc/nginx/ssl"
-CERT_FILE="/home/abc/material-sdyhjzgc-com/fullchain.pem"
-KEY_FILE="/home/abc/material-sdyhjzgc-com/privkey.pem"
+CERT_FILE="/home/abc/.acme.sh/erp.sdyhjzgc.com_ecc/fullchain.cer"
+KEY_FILE="/home/abc/.acme.sh/erp.sdyhjzgc.com_ecc/erp.sdyhjzgc.com.key"
 
 # 使用指定的证书目录
-echo -e "${YELLOW}使用指定的证书目录：/home/abc/material-sdyhjzgc-com${NC}"
+echo -e "${YELLOW}使用指定的证书目录：/home/abc/.acme.sh/erp.sdyhjzgc.com_ecc${NC}"
 
 if [ -z "$CERT_FILE" ] || [ ! -f "$CERT_FILE" ]; then
     echo -e "${RED}错误：证书文件不存在或无效：$CERT_FILE${NC}"
@@ -48,10 +48,10 @@ echo -e "  私钥：$KEY_FILE"
 
 # 创建 SSL 目录并复制证书
 mkdir -p $SSL_DIR
-cp "$CERT_FILE" "$SSL_DIR/material.sdyhjzgc.com_fullchain.crt"
-cp "$KEY_FILE" "$SSL_DIR/material.sdyhjzgc.com.key"
-chmod 600 "$SSL_DIR/material.sdyhjzgc.com.key"
-chmod 644 "$SSL_DIR/material.sdyhjzgc.com_fullchain.crt"
+cp "$CERT_FILE" "$SSL_DIR/erp.sdyhjzgc.com_fullchain.crt"
+cp "$KEY_FILE" "$SSL_DIR/erp.sdyhjzgc.com.key"
+chmod 600 "$SSL_DIR/erp.sdyhjzgc.com.key"
+chmod 644 "$SSL_DIR/erp.sdyhjzgc.com_fullchain.crt"
 chown -R root:root $SSL_DIR
 echo -e "${GREEN}✓ 证书已复制到 $SSL_DIR${NC}"
 
@@ -63,18 +63,18 @@ cat > $NGINX_CONF << NGINX_EOF
 # HTTP 到 HTTPS 重定向
 server {
     listen 80;
-    server_name material.sdyhjzgc.com www.material.sdyhjzgc.com;
-    return 301 https://material.sdyhjzgc.com\$request_uri;
+    server_name erp.sdyhjzgc.com www.erp.sdyhjzgc.com;
+    return 301 https://erp.sdyhjzgc.com$request_uri;
 }
 
 # HTTPS 服务器配置
 server {
     listen 443 ssl http2;
-    server_name material.sdyhjzgc.com www.material.sdyhjzgc.com;
+    server_name erp.sdyhjzgc.com www.erp.sdyhjzgc.com;
     
     # 使用完整证书链（包含根证书和中级证书）
-    ssl_certificate $SSL_DIR/material.sdyhjzgc.com_fullchain.crt;
-    ssl_certificate_key $SSL_DIR/material.sdyhjzgc.com.key;
+    ssl_certificate $SSL_DIR/erp.sdyhjzgc.com_fullchain.crt;
+    ssl_certificate_key $SSL_DIR/erp.sdyhjzgc.com.key;
     
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
@@ -102,7 +102,7 @@ server {
     }
     
     location / {
-        proxy_pass http://127.0.0.1:8000;
+        proxy_pass http://127.0.0.1:6666;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -141,12 +141,19 @@ source venv/bin/activate
 
 # 收集静态文件
 echo -e "${YELLOW}收集静态文件...${NC}"
-python manage.py collectstatic --noinput
+
+# 确保 STATIC_ROOT 目录存在且为空
+STATIC_ROOT="$APP_DIR/staticfiles"
+mkdir -p "$STATIC_ROOT"
+rm -rf "$STATIC_ROOT"/*
+
+# 运行 collectstatic 命令
+python3 manage.py collectstatic --noinput
 echo -e "${GREEN}✓ 静态文件收集完成${NC}"
 
 # 数据库迁移
 echo -e "${YELLOW}检查数据库迁移...${NC}"
-python manage.py migrate --noinput
+python3 manage.py migrate --noinput
 echo -e "${GREEN}✓ 数据库迁移完成${NC}"
 
 echo -e "\n${GREEN}[4/6] 启动 Gunicorn 后台服务...${NC}"
@@ -162,7 +169,7 @@ echo -e "${YELLOW}启动 Gunicorn...${NC}"
 cd $APP_DIR
 nohup gunicorn \
     --workers 3 \
-    --bind 127.0.0.1:8000 \
+    --bind 127.0.0.1:6666 \
     --timeout 60 \
     --access-logfile logs/gunicorn_access.log \
     --error-logfile logs/gunicorn_error.log \
@@ -207,10 +214,12 @@ fi
 echo -e "\n${GREEN}========================================${NC}"
 echo -e "${GREEN}✅ 生产环境启动完成！${NC}"
 echo -e "${GREEN}========================================${NC}"
-echo -e "\n访问地址:"
-echo -e "  ${GREEN}https://material.sdyhjzgc.com${NC}"
-echo -e "  ${GREEN}https://www.material.sdyhjzgc.com${NC}"
-echo -e "\nHTTP 将自动跳转到 HTTPS"
+echo -e "
+访问地址:"
+echo -e "  ${GREEN}https://erp.sdyhjzgc.com${NC}"
+echo -e "  ${GREEN}https://www.erp.sdyhjzgc.com${NC}"
+echo -e "
+HTTP 将自动跳转到 HTTPS"
 echo -e "\n服务信息:"
 echo -e "  Gunicorn PID: $GUNICORN_PID"
 echo -e "  Gunicorn 监听：127.0.0.1:8000"

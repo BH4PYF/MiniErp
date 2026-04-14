@@ -29,13 +29,15 @@ urlpatterns = [
     path('suppliers/<int:pk>/delete/', views.supplier_delete, name='supplier_delete'),
     path('api/suppliers/<int:pk>/', views.supplier_detail_api, name='supplier_detail_api'),
     path('api/suppliers/check-duplicate/', views.check_supplier_duplicate, name='check_supplier_duplicate'),
-    # 采购计划
+    # 采购计划相关
     path('purchase-plans/', views.purchase_plan_list, name='purchase_plan_list'),
+    path('purchase-plans/create/', views.purchase_plan_create, name='purchase_plan_create'),
     path('purchase-plans/save/', views.purchase_plan_save, name='purchase_plan_save'),
-    path('purchase-plans/<int:pk>/delete/', views.purchase_plan_delete, name='purchase_plan_delete'),
-    path('purchase-plans/<int:pk>/approve/', views.purchase_plan_approve, name='purchase_plan_approve'),
+    path('purchase-plans/delete/<int:pk>/', views.purchase_plan_delete, name='purchase_plan_delete'),
+    path('purchase-plans/approve/<int:pk>/', views.purchase_plan_approve, name='purchase_plan_approve'),
     path('purchase-plans/export/', views.export_purchase_plans, name='export_purchase_plans'),
-    path('api/purchase-plans/<int:pk>/', views.purchase_plan_detail_api, name='purchase_plan_detail_api'),
+    path('purchase-plans/detail/<int:pk>/', views.purchase_plan_detail_api, name='purchase_plan_detail_api'),
+    path('api/inbound-quantity/<int:project_id>/<int:material_id>/', views.get_inbound_quantity_api, name='get_inbound_quantity_api'),
     # 发货管理
     path('deliveries/', views.delivery_list, name='delivery_list'),
     path('deliveries/create/', views.delivery_create, name='delivery_create'),
@@ -63,6 +65,7 @@ urlpatterns = [
     path('material-plans/detail/<int:id>/', views.material_plan.material_plan_detail, name='material_plan_detail'),
     path('material-plans/export/', views.material_plan.export_material_plans, name='export_material_plans'),
     path('api/material-plan/<int:plan_id>/items/', views.material_plan.material_plan_items_api, name='material_plan_items_api'),
+    path('api/material-plan-items/<int:project_id>/', views.material_plan.material_plan_items_by_project_api, name='material_plan_items_by_project_api'),
     # 统计报表
     path('reports/', report.report_page, name='report_page'),
     path('reports/project-cost/', report.report_project_cost, name='report_project_cost'),

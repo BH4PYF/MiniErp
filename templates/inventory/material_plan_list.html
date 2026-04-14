@@ -1,200 +1,161 @@
-{% extends 'base.html' %}
-
+{% extends "base.html" %}
+{% block title %}材料计划{% endblock %}
+{% block page_title %}材料计划{% endblock %}
 {% block content %}
-<div class="container-fluid">
-    <div class="page-header">
-        <h5><i class="bi bi-clipboard-check"></i> 材料计划管理</h5>
-    </div>
+<style>
+    /* 材料计划列表列宽优化 */
+    .table-material-plan th:nth-child(1),  /* 计划编号 */
+    .table-material-plan td:nth-child(1) {
+        width: 120px;
+        min-width: 100px;
+    }
+    .table-material-plan th:nth-child(2),  /* 项目名称 */
+    .table-material-plan td:nth-child(2) {
+        width: 250px;
+        min-width: 200px;
+        max-width: 300px;
+    }
+    .table-material-plan th:nth-child(3),  /* 计划总额 */
+    .table-material-plan td:nth-child(3) {
+        width: 120px;
+        min-width: 100px;
+        text-align: right;
+    }
+    .table-material-plan th:nth-child(4),  /* 入库总额 */
+    .table-material-plan td:nth-child(4) {
+        width: 120px;
+        min-width: 100px;
+        text-align: right;
+    }
+    .table-material-plan th:nth-child(5),  /* 入库进度 */
+    .table-material-plan td:nth-child(5) {
+        width: 180px;
+        min-width: 150px;
+    }
+    .table-material-plan th:nth-child(6),  /* 操作 */
+    .table-material-plan td:nth-child(6) {
+        width: 140px;
+        min-width: 120px;
+        text-align: center;
+        white-space: nowrap;
+    }
     
-    <!-- 筛选栏 -->
-    <div class="filter-bar mb-4">
-        <form method="get" class="row g-2 align-items-end">
-            <div class="col-auto">
-                <input type="text" class="form-control form-control-sm" name="q" value="{{ q }}" placeholder="搜索计划编号或项目名称">
-            </div>
-            <div class="col-auto">
-                <select class="form-select form-select-sm" name="project">
-                    <option value="">全部项目</option>
-                    {% for project in projects %}
-                    <option value="{{ project.id }}" {% if project_id == project.id|stringformat:"d" %}selected{% endif %}>{{ project.code }} - {{ project.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-auto">
-                <input type="date" class="form-control form-control-sm" name="start_date" value="{{ start_date }}" placeholder="开始日期">
-            </div>
-            <div class="col-auto">
-                <input type="date" class="form-control form-control-sm" name="end_date" value="{{ end_date }}" placeholder="结束日期">
-            </div>
-            <div class="col-auto">
-                <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i> 筛选</button>
-            </div>
-            <div class="col-auto">
-                <a href="{% url 'material_plan_list' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-x-circle"></i> 重置</a>
-            </div>
-            <div class="col-auto ms-auto">
-                <a href="{% url 'export_material_plans' %}?project={{ project_id }}&q={{ q }}&start_date={{ start_date }}&end_date={{ end_date }}" class="btn btn-sm btn-outline-success me-2"><i class="bi bi-download"></i> 导出</a>
-                <button id="asyncExportBtn" class="btn btn-sm btn-outline-primary"><i class="bi bi-clock"></i> 异步导出</button>
-            </div>
-        </form>
-    </div>
-    
-    <!-- 材料计划列表 -->
-    <div class="card">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>计划编号</th>
-                            <th>材料名称</th>
-                            <th>规格</th>
-                            <th>单位</th>
-                            <th>计划数量</th>
-                            <th>标准单价</th>
-                            <th>金额</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- 内联创建行 -->
-                        <form method="post" action="{% url 'material_plan_save' %}" class="d-contents" id="addMaterialPlanForm">
-                            {% csrf_token %}
-                            <tr class="table-light">
-                                <td>
-                                    <input type="text" class="form-control form-control-sm" name="plan_number" value="{{ new_plan_number }}" readonly>
-                                </td>
-                                <td>
-                                    <select class="form-select form-select-sm" name="material_id" id="addMaterial" required onchange="onAddMaterialChange(this)">
-                                        <option value="">请选择材料</option>
-                                        {% for material in materials %}
-                                        <option value="{{ material.id }}" data-spec="{{ material.spec }}" data-unit="{{ material.unit }}" data-standard-price="{{ material.standard_price }}">{{ material.name }} ({{ material.spec }})</option>
-                                        {% endfor %}
-                                    </select>
-                                </td>
-                                <td>
-                                    <input type="text" class="form-control form-control-sm" name="spec" id="addSpec" readonly>
-                                </td>
-                                <td>
-                                    <input type="text" class="form-control form-control-sm" name="unit" id="addUnit" readonly>
-                                </td>
-                                <td>
-                                    <input type="number" class="form-control form-control-sm" name="quantity" id="addQuantity" step="0.01" min="0.01" required oninput="calcAddAmount()">
-                                </td>
-                                <td>
-                                    <input type="number" class="form-control form-control-sm" name="standard_price" id="addStandardPrice" step="0.01" readonly>
-                                </td>
-                                <td>
-                                    <input type="number" class="form-control form-control-sm" name="amount" id="addAmount" step="0.01" readonly>
-                                </td>
-                                <td>
-                                    <button type="submit" class="btn btn-sm btn-success">
-                                        <i class="bi bi-plus"></i> 添加
-                                    </button>
-                                </td>
-                            </tr>
-                        </form>
-                        
-                        <!-- 材料计划列表 -->
-                        {% for plan in plans %}
-                        {% for item in plan.items.all %}
-                        <tr>
-                            <td>{{ plan.plan_number }}</td>
-                            <td>{{ item.material.name }}</td>
-                            <td>{{ item.material.spec }}</td>
-                            <td>{{ item.unit }}</td>
-                            <td>{{ item.quantity|floatformat:2 }}</td>
-                            <td>{{ item.material.standard_price|floatformat:2 }}</td>
-                            <td>¥{{ item.amount|floatformat:2 }}</td>
-                            <td>
-                                <a href="{% url 'material_plan_detail' plan.id %}" class="btn btn-sm btn-outline-info me-1">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                                <a href="{% url 'material_plan_edit' plan.id %}" class="btn btn-sm btn-outline-primary me-1">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteItem({{ plan.id }}, '{{ plan.no }}', 'material_plan')">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                        {% empty %}
-                        <tr>
-                            <td colspan="8" class="text-center py-5">
-                                <i class="bi bi-clipboard-check fs-1 text-muted d-block mb-3"></i>
-                                <h6 class="text-muted">暂无材料计划数据</h6>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- 分页 -->
-            {% if plans.has_other_pages %}
-            <nav class="mt-4">
-                <ul class="pagination justify-content-center">
-                    {% if plans.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ plans.previous_page_number }}">上一页</a>
-                    </li>
-                    {% endif %}
-                    {% for i in plans.paginator.page_range %}
-                    {% if plans.number == i %}
-                    <li class="page-item active">
-                        <span class="page-link">{{ i }}</span>
-                    </li>
-                    {% else %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ i }}">{{ i }}</a>
-                    </li>
-                    {% endif %}
-                    {% endfor %}
-                    {% if plans.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ plans.next_page_number }}">下一页</a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </nav>
-            {% endif %}
-        </div>
+    /* 操作按钮样式优化 */
+    .table-material-plan td:nth-child(6) .btn {
+        margin-right: 4px;
+    }
+    .table-material-plan td:nth-child(6) .btn:last-child {
+        margin-right: 0;
+    }
+</style>
+<div class="page-header">
+    <h5><i class="bi bi-clipboard-check"></i> 材料计划</h5>
+    <div>
+        <a href="{% url 'export_material_plans' %}?project={{ project_id }}&q={{ q }}&start_date={{ start_date }}&end_date={{ end_date }}" class="btn btn-sm btn-outline-success"><i class="bi bi-download"></i> 导出Excel</a>
     </div>
 </div>
 
-<script>
-// 选择材料时自动填充相关字段
-function onAddMaterialChange(sel) {
-    const selectedOption = sel.options[sel.selectedIndex];
-    if (selectedOption.value) {
-        const spec = selectedOption.getAttribute('data-spec');
-        const unit = selectedOption.getAttribute('data-unit');
-        const standardPrice = selectedOption.getAttribute('data-standard-price');
-        
-        document.getElementById('addSpec').value = spec;
-        document.getElementById('addUnit').value = unit;
-        document.getElementById('addStandardPrice').value = standardPrice;
-        
-        // 触发金额计算
-        calcAddAmount();
-    } else {
-        // 清空字段
-        document.getElementById('addSpec').value = '';
-        document.getElementById('addUnit').value = '';
-        document.getElementById('addStandardPrice').value = '';
-        document.getElementById('addAmount').value = '';
-    }
-}
+<div class="filter-bar">
+    <form method="get" class="row g-2 align-items-end" id="filterForm">
+        <div class="col-auto">
+            <select class="form-select form-select-sm" name="project" id="filterProject">
+                <option value="">全部项目</option>
+                {% for project in projects %}
+                <option value="{{ project.id }}" {% if project_id == project.id|stringformat:"d" %}selected{% endif %}>{{ project.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <select class="form-select form-select-sm" name="material" id="filterMaterial">
+                <option value="">全部材料</option>
+                {% for material in materials %}
+                <option value="{{ material.id }}" {% if material_id == material.id|stringformat:"d" %}selected{% endif %}>{{ material.name }} ({{ material.spec }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto"><button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i> 筛选</button></div>
+        <div class="col-auto"><a href="{% url 'material_plan_list' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-x-circle"></i> 重置</a></div>
+        <div class="col-auto"><a href="{% url 'material_plan_create' %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg"></i> 创建材料计划</a></div>
+    </form>
+</div>
 
-// 计算金额
-function calcAddAmount() {
-    const quantity = parseFloat(document.getElementById('addQuantity').value) || 0;
-    const standardPrice = parseFloat(document.getElementById('addStandardPrice').value) || 0;
-    const amount = quantity * standardPrice;
-    document.getElementById('addAmount').value = amount.toFixed(2);
-}
-</script>
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+        <table class="table table-hover mb-0 table-material-plan">
+            <thead>
+                <tr>
+                    <th>计划编号</th>
+                    <th>项目名称</th>
+                    <th>计划总额</th>
+                    <th>入库总额</th>
+                    <th>入库进度</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 材料计划列表 -->
+                {% for plan in plans %}
+                <tr>
+                    <td>{{ plan.plan_number }}</td>
+                    <td>{{ plan.project.name }}</td>
+                    <td class="text-right">¥{{ plan.total_amount|floatformat:2 }}</td>
+                    <td class="text-right">¥{{ plan.total_inbound_amount|floatformat:2 }}</td>
+                    <td>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar {% if plan.overall_progress < 33 %}bg-danger{% elif plan.overall_progress < 66 %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ plan.overall_progress }}%;" role="progressbar" aria-valuenow="{{ plan.overall_progress }}" aria-valuemin="0" aria-valuemax="100">
+                                {{ plan.overall_progress }}%
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <a href="{% url 'material_plan_detail' plan.id %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
+                        <a href="{% url 'material_plan_edit' plan.id %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteItem({{ plan.id }}, '{{ plan.plan_number }}', 'material_plan')"><i class="bi bi-trash"></i></button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <i class="bi bi-clipboard-check fs-1 text-muted d-block mb-3"></i>
+                        <h6 class="text-muted">暂无材料计划数据</h6>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        
+        <!-- 分页 -->
+        {% if plans.has_other_pages %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if plans.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ plans.previous_page_number }}">上一页</a>
+                </li>
+                {% endif %}
+                {% for i in plans.paginator.page_range %}
+                {% if plans.number == i %}
+                <li class="page-item active">
+                    <span class="page-link">{{ i }}</span>
+                </li>
+                {% else %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+                {% if plans.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ plans.next_page_number }}">下一页</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
 
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
@@ -217,56 +178,80 @@ function calcAddAmount() {
         </div>
     </div>
 </div>
+{% endblock %}
+{% block extra_js %}
 <script>
 function deleteItem(pk, name, type) {
     document.getElementById('deleteItemName').textContent = name;
-    document.getElementById('deleteForm').action = '/material-plans/' + pk + '/delete/';
+    document.getElementById('deleteForm').action = '/material-plans/delete/' + pk + '/';
     new bootstrap.Modal(document.getElementById('deleteModal')).show();
 }
 
-// 异步导出功能
-document.getElementById('asyncExportBtn').addEventListener('click', function() {
-    // 获取筛选参数
-    const projectId = new URLSearchParams(window.location.search).get('project') || '';
-    const q = new URLSearchParams(window.location.search).get('q') || '';
-    const startDate = new URLSearchParams(window.location.search).get('start_date') || '';
-    const endDate = new URLSearchParams(window.location.search).get('end_date') || '';
-    
-    // 显示加载状态
-    const btn = this;
-    const originalText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="bi bi-hourglass"></i> 处理中...';
-    
-    // 发送异步导出请求
-    fetch(`/api/export/material-plans/?project=${projectId}&q=${q}&start_date=${startDate}&end_date=${endDate}`, {
-        method: 'GET',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+function initSearchableSelect(selectId) {
+    var select = document.getElementById(selectId);
+    if (!select) return;
+    var wrapper = document.createElement('div');
+    wrapper.style.position = 'relative';
+    wrapper.style.display = 'inline-block';
+    select.parentNode.insertBefore(wrapper, select);
+    wrapper.appendChild(select);
+    select.style.display = 'none';
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'form-control form-control-sm';
+    input.placeholder = select.options[0].text;
+    input.style.width = '180px';
+    wrapper.appendChild(input);
+    var dropdown = document.createElement('div');
+    dropdown.className = 'dropdown-menu';
+    dropdown.style.cssText = 'position:absolute;top:100%;left:0;z-index:1000;max-height:200px;overflow-y:auto;width:100%;';
+    wrapper.appendChild(dropdown);
+    var currentVal = select.value;
+    if (currentVal) {
+        for (var i = 0; i < select.options.length; i++) {
+            if (select.options[i].value == currentVal) {
+                input.value = select.options[i].text;
+                break;
+            }
         }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // 显示成功消息
-            alert('导出任务已开始，您可以通过任务ID查询进度：' + data.task_id);
-            // 跳转到任务状态页面
-            window.location.href = `/api/tasks/${data.task_id}/status/`;
-        } else {
-            // 显示错误消息
-            alert('导出任务启动失败：' + data.error);
+    }
+    function renderOptions(filter) {
+        dropdown.innerHTML = '';
+        var f = (filter || '').toLowerCase();
+        for (var i = 0; i < select.options.length; i++) {
+            var opt = select.options[i];
+            if (!opt.value) continue;
+            if (f && opt.text.toLowerCase().indexOf(f) === -1) continue;
+            var item = document.createElement('a');
+            item.className = 'dropdown-item';
+            item.href = '#';
+            item.textContent = opt.text;
+            item.setAttribute('data-value', opt.value);
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                select.value = this.getAttribute('data-value');
+                input.value = this.textContent;
+                dropdown.classList.remove('show');
+            });
+            dropdown.appendChild(item);
         }
-    })
-    .catch(error => {
-        // 显示错误消息
-        alert('导出任务启动失败：' + error.message);
-    })
-    .finally(() => {
-        // 恢复按钮状态
-        btn.disabled = false;
-        btn.innerHTML = originalText;
+        if (dropdown.children.length === 0) {
+            var empty = document.createElement('span');
+            empty.className = 'dropdown-item text-muted';
+            empty.textContent = '无匹配项';
+            dropdown.appendChild(empty);
+        }
+        dropdown.classList.add('show');
+    }
+    input.addEventListener('focus', function() { renderOptions(this.value); });
+    input.addEventListener('input', function() { renderOptions(this.value); });
+    document.addEventListener('click', function(e) {
+        if (!wrapper.contains(e.target)) dropdown.classList.remove('show');
     });
-});
+}
+
+// 初始化搜索选择框
+initSearchableSelect('filterProject');
+initSearchableSelect('filterMaterial');
 </script>
 {% endblock %}

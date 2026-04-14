@@ -75,26 +75,36 @@
                             <tr>
                                 <th>材料名称</th>
                                 <th>计划数量</th>
+                                <th>入库数量</th>
                                 <th>单位</th>
                                 <th>单价</th>
                                 <th>金额</th>
+                                <th>入库进度</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for item in plan.items.all %}
+                            {% for item in plan.items_list %}
                             <tr>
                                 <td>{{ item.material.name }}</td>
                                 <td>{{ item.quantity }}</td>
+                                <td>{{ item.inbound_total }}</td>
                                 <td>{{ item.unit }}</td>
                                 <td>¥{{ item.unit_price|floatformat:2 }}</td>
                                 <td>¥{{ item.amount|floatformat:2 }}</td>
+                                <td>
+                                    <div class="progress" style="height: 10px; border-radius: 5px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ item.progress }}%" aria-valuenow="{{ item.progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <div class="text-center text-sm mt-1">{{ item.progress }}%</div>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                         <tfoot>
                             <tr>
-                                <th colspan="4" class="text-end">合计</th>
+                                <th colspan="5" class="text-end">合计</th>
                                 <th>¥{{ plan.total_amount|floatformat:2 }}</th>
+                                <th></th>
                             </tr>
                         </tfoot>
                     </table>

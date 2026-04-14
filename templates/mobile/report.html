@@ -1,0 +1,251 @@
+{% extends 'mobile/base.html' %}
+
+{% block title %}统计报表 - {{ company_name|default:"材料管理系统" }}{% endblock %}
+
+{% block header_title %}统计报表{% endblock %}
+
+{% block content %}
+    <!-- 报表类型选择 -->
+    <div class="mobile-card mb-4">
+        <div class="mobile-card-title">报表类型</div>
+        <div class="grid grid-cols-2 gap-3">
+            <button class="mobile-report-btn mobile-touchable active" data-report-type="project-cost">
+                <i class="bi bi-clipboard-data"></i>
+                <span>项目采购分析</span>
+            </button>
+            <button class="mobile-report-btn mobile-touchable" data-report-type="supplier-cost">
+                <i class="bi bi-truck"></i>
+                <span>供应商采购分析</span>
+            </button>
+            <button class="mobile-report-btn mobile-touchable" data-report-type="monthly-stat">
+                <i class="bi bi-calendar"></i>
+                <span>月度统计</span>
+            </button>
+            <button class="mobile-report-btn mobile-touchable" data-report-type="inventory-stat">
+                <i class="bi bi-box"></i>
+                <span>库存统计</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 项目采购分析表单 -->
+    <div class="mobile-form mb-4" id="project-cost-form">
+        <div class="mobile-form-group">
+            <label class="mobile-form-label" for="project_id">选择项目</label>
+            <select class="mobile-form-select" id="project_id" name="project_id" required>
+                <option value="">请选择项目</option>
+                {% for project in projects %}
+                <option value="{{ project.id }}">{{ project.code }} - {{ project.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mobile-form-group">
+            <label class="mobile-form-label" for="date_from">开始日期</label>
+            <input type="date" class="mobile-form-control" id="date_from" name="date_from">
+        </div>
+        <div class="mobile-form-group">
+            <label class="mobile-form-label" for="date_to">结束日期</label>
+            <input type="date" class="mobile-form-control" id="date_to" name="date_to">
+        </div>
+        <button type="button" class="mobile-btn mobile-btn-primary mobile-btn-block" onclick="submitReportForm('project-cost')">
+            查看采购分析
+        </button>
+    </div>
+
+    <!-- 供应商采购分析表单 -->
+    <div class="mobile-form mb-4" id="supplier-cost-form" style="display: none;">
+        <div class="mobile-form-group">
+            <label class="mobile-form-label" for="supplier_id">选择供应商</label>
+            <select class="mobile-form-select" id="supplier_id" name="supplier_id" required>
+                <option value="">请选择供应商</option>
+                {% for supplier in suppliers %}
+                <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mobile-form-group">
+            <label class="mobile-form-label" for="supplier_date_from">开始日期</label>
+            <input type="date" class="mobile-form-control" id="supplier_date_from" name="date_from">
+        </div>
+        <div class="mobile-form-group">
+            <label class="mobile-form-label" for="supplier_date_to">结束日期</label>
+            <input type="date" class="mobile-form-control" id="supplier_date_to" name="date_to">
+        </div>
+        <button type="button" class="mobile-btn mobile-btn-primary mobile-btn-block" onclick="submitReportForm('supplier-cost')">
+            查看供应商分析
+        </button>
+    </div>
+
+    <!-- 月度统计表单 -->
+    <div class="mobile-form mb-4" id="monthly-stat-form" style="display: none;">
+        <div class="mobile-form-group">
+            <label class="mobile-form-label" for="year">年份</label>
+            <select class="mobile-form-select" id="year" name="year" required>
+                {% for year in years %}
+                <option value="{{ year }}">{{ year }}年</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mobile-form-group">
+            <label class="mobile-form-label" for="month">月份</label>
+            <select class="mobile-form-select" id="month" name="month" required>
+                {% for month in months %}
+                <option value="{{ month }}">{{ month }}月</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="button" class="mobile-btn mobile-btn-primary mobile-btn-block" onclick="submitReportForm('monthly-stat')">
+            查看月度统计
+        </button>
+    </div>
+
+    <!-- 库存统计表单 -->
+    <div class="mobile-form mb-4" id="inventory-stat-form" style="display: none;">
+        <div class="mobile-form-group">
+            <label class="mobile-form-label" for="inventory_project_id">选择项目</label>
+            <select class="mobile-form-select" id="inventory_project_id" name="project_id">
+                <option value="">全部项目</option>
+                {% for project in projects %}
+                <option value="{{ project.id }}">{{ project.code }} - {{ project.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="button" class="mobile-btn mobile-btn-primary mobile-btn-block" onclick="submitReportForm('inventory-stat')">
+            查看库存统计
+        </button>
+    </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .grid {
+        display: grid;
+    }
+    
+    .grid-cols-2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .gap-3 {
+        gap: 12px;
+    }
+    
+    .mobile-report-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: white;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .mobile-report-btn.active {
+        border-color: #007bff;
+        background-color: #e3f2fd;
+    }
+    
+    .mobile-report-btn i {
+        font-size: 24px;
+        color: #007bff;
+        margin-bottom: 8px;
+    }
+    
+    .mobile-report-btn span {
+        font-size: 14px;
+        color: #333;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 报表类型切换
+    document.addEventListener('DOMContentLoaded', function() {
+        const reportBtns = document.querySelectorAll('.mobile-report-btn');
+        const reportForms = [
+            document.getElementById('project-cost-form'),
+            document.getElementById('supplier-cost-form'),
+            document.getElementById('monthly-stat-form'),
+            document.getElementById('inventory-stat-form')
+        ];
+
+        reportBtns.forEach((btn, index) => {
+            btn.addEventListener('click', function() {
+                // 移除所有按钮的活动状态
+                reportBtns.forEach(b => b.classList.remove('active'));
+                // 添加当前按钮的活动状态
+                this.classList.add('active');
+                
+                // 隐藏所有表单
+                reportForms.forEach(form => form.style.display = 'none');
+                // 显示对应表单
+                reportForms[index].style.display = 'block';
+            });
+        });
+    });
+
+    // 提交报表表单
+    function submitReportForm(reportType) {
+        let formData = new FormData();
+        let url = '';
+
+        switch (reportType) {
+            case 'project-cost':
+                const projectId = document.getElementById('project_id').value;
+                const dateFrom = document.getElementById('date_from').value;
+                const dateTo = document.getElementById('date_to').value;
+                
+                if (!projectId) {
+                    mobileApp.showMessage('请选择项目', 'warning');
+                    return;
+                }
+                
+                url = '{% url "report_project_cost" %}';
+                formData.append('project_id', projectId);
+                if (dateFrom) formData.append('date_from', dateFrom);
+                if (dateTo) formData.append('date_to', dateTo);
+                break;
+
+            case 'supplier-cost':
+                const supplierId = document.getElementById('supplier_id').value;
+                const supplierDateFrom = document.getElementById('supplier_date_from').value;
+                const supplierDateTo = document.getElementById('supplier_date_to').value;
+                
+                if (!supplierId) {
+                    mobileApp.showMessage('请选择供应商', 'warning');
+                    return;
+                }
+                
+                url = '{% url "report_supplier_cost" %}';
+                formData.append('supplier_id', supplierId);
+                if (supplierDateFrom) formData.append('date_from', supplierDateFrom);
+                if (supplierDateTo) formData.append('date_to', supplierDateTo);
+                break;
+
+            case 'monthly-stat':
+                const year = document.getElementById('year').value;
+                const month = document.getElementById('month').value;
+                
+                url = '{% url "report_monthly_stat" %}';
+                formData.append('year', year);
+                formData.append('month', month);
+                break;
+
+            case 'inventory-stat':
+                const inventoryProjectId = document.getElementById('inventory_project_id').value;
+                
+                url = '{% url "report_inventory_stat" %}';
+                if (inventoryProjectId) formData.append('project_id', inventoryProjectId);
+                break;
+        }
+
+        // 构建查询字符串
+        const queryString = new URLSearchParams(formData).toString();
+        window.location.href = url + '?' + queryString;
+    }
+</script>
+{% endblock %}

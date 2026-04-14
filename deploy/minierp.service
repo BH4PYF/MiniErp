@@ -1,14 +1,20 @@
 [Unit]
-Description=MiniErp 项目管理系统
-After=network.target
+Description=MiniErp Project Management System
+After=network.target nginx.service
 
 [Service]
+Type=simple
 User=abc
 Group=abc
 WorkingDirectory=/home/abc/MiniErp
-ExecStart=/home/abc/MiniErp/venv/bin/gunicorn --config /home/abc/MiniErp/gunicorn_config.py minierp.wsgi:application
+Environment="PATH=/home/abc/MiniErp/venv/bin"
+Environment="PYTHONPATH=/home/abc/MiniErp"
+Environment="DJANGO_SETTINGS_MODULE=minierp.settings"
+ExecStart=/home/abc/MiniErp/venv/bin/gunicorn --workers 3 --bind 127.0.0.1:6666 --timeout 60 --access-logfile logs/gunicorn_access.log --error-logfile logs/gunicorn_error.log --log-level info --worker-class sync --max-requests 1000 --max-requests-jitter 100 minierp.wsgi:application
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
 Restart=on-failure
-RestartSec=5s
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.db import transaction
@@ -38,7 +39,8 @@ def purchase_plan_list(request):
     projects = Project.objects.all()
     materials = Material.objects.select_related('category').all()
     suppliers = Supplier.objects.all()
-    material_plans = MaterialPlan.objects.select_related('project').all()
+    # 获取材料计划及其明细
+    material_plans = MaterialPlan.objects.select_related('project').prefetch_related('items__material').all()
 
     return render(request, 'inventory/purchase_plan_list.html', {
         'plans': page_obj,
@@ -52,6 +54,37 @@ def purchase_plan_list(request):
         'page_obj': page_obj,
     })
 
+
+@purchase_plan_required
+def purchase_plan_create(request):
+    """创建采购计划"""
+    # 下拉框数据
+    projects = Project.objects.filter(is_deleted=False).order_by('name')
+    materials = Material.objects.filter(is_deleted=False).order_by('name')
+    suppliers = Supplier.objects.filter(is_deleted=False).order_by('name')
+    
+    return render(request, 'inventory/purchase_plan_create.html', {
+        'projects': projects,
+        'materials': materials,
+        'suppliers': suppliers,
+    })
+
+
+from django.db.models import Sum
+
+# 获取已入库数量的API
+@purchase_plan_required
+def get_inbound_quantity_api(request, project_id, material_id):
+    """根据项目ID和材料ID获取已入库数量"""
+    from django.http import JsonResponse
+    from ..models import InboundRecord
+    # 获取该项目该材料的已入库数量
+    inbound_quantity = InboundRecord.objects.filter(
+        project_id=project_id,
+        material_id=material_id,
+        is_deleted=False
+    ).aggregate(total=Sum('quantity'))['total'] or 0
+    return JsonResponse({'inbound_quantity': str(inbound_quantity)})
 
 @purchase_plan_required
 def purchase_plan_save(request):
@@ -86,9 +119,7 @@ def purchase_plan_save(request):
         err = validate_required_fields(request.POST, {
             'project_id': '请选择所属项目',
             'material_id': '请选择材料',
-            'spec': '请填写规格型号',
             'supplier_id': '请选择供应商',
-            'planned_date': '请选择计划采购日期',
         })
         if err:
             return JsonResponse({'error': err}, status=400)
@@ -96,22 +127,30 @@ def purchase_plan_save(request):
         obj.material_id = material_id
         obj.material_plan_id = material_plan_id if material_plan_id else None
         obj.supplier_id = supplier_id
-        obj.spec = request.POST.get('spec', '').strip()
+        # 从Material模型中获取规格和标准单价
+        if material_id:
+            try:
+                material = Material.objects.get(pk=material_id)
+                # 确保规格不为空
+                if not material.spec:
+                    return JsonResponse({'error': '材料规格信息不完整，请在材料档案中完善规格信息'}, status=400)
+                obj.spec = material.spec
+                obj.unit_price = material.standard_price
+            except Material.DoesNotExist:
+                return JsonResponse({'error': '材料不存在'}, status=400)
         quantity, err = parse_positive_decimal(request.POST.get('quantity'), '采购数量')
         if err:
             return JsonResponse({'error': err}, status=400)
         obj.quantity = quantity
-        # 预计单价字段不再手动设置，直接使用材料的标准单价
-        if obj.material:
-            obj.unit_price = obj.material.standard_price
-        raw_planned_date = request.POST.get('planned_date', '')
-        if raw_planned_date:
-            parsed_date = parse_date(raw_planned_date)
-            if not parsed_date:
-                return JsonResponse({'error': '计划采购日期格式不正确，请使用 YYYY-MM-DD 格式'}, status=400)
-            obj.planned_date = parsed_date
-        else:
-            obj.planned_date = None
+        # 计划采购日期设置为当前日期
+        obj.planned_date = timezone.now().date()
+        # 设置计划数量和已入库数量
+        plan_quantity = request.POST.get('plan_quantity', '0')
+        obj.plan_quantity = Decimal(plan_quantity) if plan_quantity else Decimal('0')
+        inbound_quantity = request.POST.get('inbound_quantity', '0')
+        obj.inbound_quantity = Decimal(inbound_quantity) if inbound_quantity else Decimal('0')
+        # 设置操作员为当前用户
+        obj.operator = request.user
         VALID_STATUSES = {c[0] for c in PurchasePlan.STATUS_CHOICES}
         status = request.POST.get('status', PurchasePlan.STATUS_PENDING)
         if status not in VALID_STATUSES:

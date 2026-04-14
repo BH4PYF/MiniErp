@@ -47,8 +47,14 @@
         min-width: 90px;
         text-align: right;
     }
-    .table-project-list th:nth-child(9),  /* 操作 */
+    .table-project-list th:nth-child(9),  /* 结算总额 */
     .table-project-list td:nth-child(9) {
+        width: 110px;
+        min-width: 90px;
+        text-align: right;
+    }
+    .table-project-list th:nth-child(10),  /* 操作 */
+    .table-project-list td:nth-child(10) {
         width: 140px;
         min-width: 120px;
         text-align: center;  /* 全部居中 */
@@ -56,22 +62,22 @@
     }
     
     /* 操作按钮样式优化 */
-    .table-project-list td:nth-child(9) .btn {
+    .table-project-list td:nth-child(10) .btn {
         margin-right: 4px;
     }
-    .table-project-list td:nth-child(9) .btn:last-child {
+    .table-project-list td:nth-child(10) .btn:last-child {
         margin-right: 0;
     }
     
     /* 创建按钮宽度调整 - 与编辑删除两个按钮宽度一致 */
-    .table-project-list tr:first-child td:nth-child(9) .btn {
+    .table-project-list tr:first-child td:nth-child(10) .btn {
         min-width: 70px;  /* 编辑删除按钮总宽度约 70px */
         padding-left: 6px;
         padding-right: 6px;
     }
     
     /* 创建按钮居中显示 */
-    .table-project-list tr:first-child td:nth-child(9) {
+    .table-project-list tr:first-child td:nth-child(10) {
         text-align: center;
     }
     
@@ -87,9 +93,16 @@
 </div>
 <div class="filter-bar">
     <form method="get" class="row g-2 align-items-end">
-        <div class="col-auto"><input type="text" class="form-control form-control-sm" name="q" value="{{ q }}" placeholder="搜索编号/名称"></div>
         <div class="col-auto">
-            <select class="form-select form-select-sm" name="status">
+            <select class="form-select form-select-sm" name="project" id="filterProject">
+                <option value="">全部项目</option>
+                {% for p in projects %}
+                <option value="{{ p.id }}" {% if selected_project == p.id|stringformat:"d" %}selected{% endif %}>{{ p.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <select class="form-select form-select-sm" name="status" id="filterStatus">
                 <option value="">全部状态</option>
                 <option value="planning" {% if status_filter == 'planning' %}selected{% endif %}>筹备中</option>
                 <option value="active" {% if status_filter == 'active' %}selected{% endif %}>进行中</option>
@@ -97,14 +110,20 @@
                 <option value="paused" {% if status_filter == 'paused' %}selected{% endif %}>暂停</option>
             </select>
         </div>
-        <div class="col-auto"><button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i> 查询</button></div>
+        <div class="col-auto"><button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i> 筛选</button></div>
+        <div class="col-auto"><a href="{% url 'project_list' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-x-circle"></i> 重置</a></div>
+        <div class="col-auto ms-auto">
+            <a href="{% url 'download_import_template' %}?type=project" class="btn btn-sm btn-outline-secondary"><i class="bi bi-file-earmark-arrow-down"></i> 导入模板</a>
+            <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#importProjectModal"><i class="bi bi-upload"></i> 批量导入</button>
+            <a href="{% url 'export_excel' %}?type=project" class="btn btn-sm btn-outline-success"><i class="bi bi-download"></i> 批量导出</a>
+        </div>
     </form>
 </div>
 <div class="card shadow-sm">
     <div class="card-body p-0">
         <div class="table-responsive">
         <table class="table table-hover mb-0 table-project-list">
-            <thead><tr><th>项目编号</th><th>项目名称 <span class="text-danger">*</span></th><th>负责人 <span class="text-danger">*</span></th><th>状态 <span class="text-danger">*</span></th><th>预算(元) <span class="text-danger">*</span></th><th>开工日期 <span class="text-danger">*</span></th><th>竣工日期 <span class="text-danger">*</span></th><th>入库总额</th><th>操作</th></tr></thead>
+            <thead><tr><th>项目编号</th><th>项目名称 <span class="text-danger">*</span></th><th>负责人 <span class="text-danger">*</span></th><th>状态 <span class="text-danger">*</span></th><th>预算(元) <span class="text-danger">*</span></th><th>开工日期 <span class="text-danger">*</span></th><th>竣工日期 <span class="text-danger">*</span></th><th>入库总额</th><th>结算总额</th><th></th>操作</th></tr></thead>
             <tbody>
             <!-- 新增行 -->
             <form method="post" action="{% url 'project_save' %}" class="d-contents" data-ajax>
@@ -130,6 +149,7 @@
                     <td><input type="date" class="form-control form-control-sm" name="start_date" required></td>
                     <td><input type="date" class="form-control form-control-sm" name="end_date" required></td>
                     <td><small class="text-muted">-</small></td>
+                    <td><small class="text-muted">-</small></td>
                     <td><button type="submit" class="btn btn-sm btn-success" id="createBtn"><i class="bi bi-plus-lg"></i> 创建</button></td>
                 </tr>
             </form>
@@ -148,6 +168,7 @@
                 <td>{{ p.start_date|default:'-' }}</td>
                 <td>{{ p.end_date|default:'-' }}</td>
                 <td class="text-primary">{{ p.total_inbound|floatformat:2 }}</td>
+                <td class="text-primary">{{ p.total_settlement|floatformat:2 }}</td>
                 <td>
                     <button class="btn btn-sm btn-outline-primary edit-btn" data-project-id="{{ p.pk }}"><i class="bi bi-pencil"></i></button>
                     {% if request.user.profile.is_admin %}
@@ -156,7 +177,7 @@
                 </td>
             </tr>
             {% empty %}
-            <tr><td colspan="10" class="text-center text-muted py-4">暂无项目数据</td></tr>
+            <tr><td colspan="11" class="text-center text-muted py-4">暂无项目数据</td></tr>
             {% endfor %}
             </tbody>
         </table>
@@ -225,8 +246,72 @@
         </div>
     </div>
 </div>
+
+<!-- 批量导入模态框 -->
+<div class="modal fade" id="importProjectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white py-2">
+                <h6 class="modal-title"><i class="bi bi-upload"></i> 批量导入项目</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">请先<a href="{% url 'download_import_template' %}?type=project">下载导入模板</a>，按模板格式填写数据后上传。重复的项目（名称相同）将自动跳过。</p>
+                <form id="importProjectForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="type" value="project">
+                    <div class="mb-3">
+                        <input type="file" class="form-control" name="file" accept=".xlsx" required>
+                    </div>
+                </form>
+                <div id="importProjectResult" class="d-none">
+                    <div class="alert alert-info small mb-0" id="importProjectResultMsg"></div>
+                    <ul class="list-unstyled small text-danger mt-2 mb-0" id="importProjectErrors"></ul>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-sm btn-info" id="importProjectBtn" onclick="doImportProject()"><i class="bi bi-upload"></i> 开始导入</button>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
 {% endblock %}
 {% block extra_js %}
+
+<script>
+function doImportProject() {
+    const form = document.getElementById('importProjectForm');
+    const fileInput = form.querySelector('input[type=file]');
+    if (!fileInput.files.length) { showMsg('请选择文件'); return; }
+    const btn = document.getElementById('importProjectBtn');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 导入中...';
+    const formData = new FormData(form);
+    fetch('{% url "import_excel" %}', {method: 'POST', body: formData})
+        .then(r => r.json())
+        .then(data => {
+            const resultDiv = document.getElementById('importProjectResult');
+            const msgDiv = document.getElementById('importProjectResultMsg');
+            const errList = document.getElementById('importProjectErrors');
+            resultDiv.classList.remove('d-none');
+            if (data.success) {
+                msgDiv.className = 'alert alert-success small mb-0';
+                msgDiv.textContent = data.message;
+                errList.innerHTML = '';
+                if (data.errors && data.errors.length) {
+                    data.errors.forEach(e => { const li = document.createElement('li'); li.textContent = e; errList.appendChild(li); });
+                }
+                if (data.created > 0) setTimeout(() => location.reload(), 1500);
+            } else {
+                msgDiv.className = 'alert alert-danger small mb-0';
+                msgDiv.textContent = data.error;
+            }
+        })
+        .catch(() => showMsg('请求失败'))
+        .finally(() => { btn.disabled = false; btn.innerHTML = '<i class="bi bi-upload"></i> 开始导入'; });
+}
+</script>
 <script>
 // 页面加载完成后绑定事件
 document.addEventListener('DOMContentLoaded', function() {
@@ -321,5 +406,74 @@ function handleProjectSaveSuccess(data) {
         location.reload();
     }, 1500);
 }
+
+function initSearchableSelect(selectId) {
+    var select = document.getElementById(selectId);
+    if (!select) return;
+    var wrapper = document.createElement('div');
+    wrapper.style.position = 'relative';
+    wrapper.style.display = 'inline-block';
+    select.parentNode.insertBefore(wrapper, select);
+    wrapper.appendChild(select);
+    select.style.display = 'none';
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'form-control form-control-sm';
+    input.placeholder = select.options[0].text;
+    input.style.width = '180px';
+    wrapper.appendChild(input);
+    var dropdown = document.createElement('div');
+    dropdown.className = 'dropdown-menu';
+    dropdown.style.cssText = 'position:absolute;top:100%;left:0;z-index:1000;max-height:200px;overflow-y:auto;width:100%;';
+    wrapper.appendChild(dropdown);
+    var currentVal = select.value;
+    if (currentVal) {
+        for (var i = 0; i < select.options.length; i++) {
+            if (select.options[i].value == currentVal) {
+                input.value = select.options[i].text;
+                break;
+            }
+        }
+    }
+    function renderOptions(filter) {
+        dropdown.innerHTML = '';
+        var f = (filter || '').toLowerCase();
+        for (var i = 0; i < select.options.length; i++) {
+            var opt = select.options[i];
+            if (!opt.value) continue;
+            if (f && opt.text.toLowerCase().indexOf(f) === -1) continue;
+            var item = document.createElement('a');
+            item.className = 'dropdown-item';
+            item.href = '#';
+            item.textContent = opt.text;
+            item.setAttribute('data-value', opt.value);
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                select.value = this.getAttribute('data-value');
+                input.value = this.textContent;
+                dropdown.classList.remove('show');
+            });
+            dropdown.appendChild(item);
+        }
+        if (dropdown.children.length === 0) {
+            var empty = document.createElement('span');
+            empty.className = 'dropdown-item text-muted';
+            empty.textContent = '无匹配项';
+            dropdown.appendChild(empty);
+        }
+        dropdown.classList.add('show');
+    }
+    input.addEventListener('focus', function() { renderOptions(this.value); });
+    input.addEventListener('input', function() { renderOptions(this.value); });
+    document.addEventListener('click', function(e) {
+        if (!wrapper.contains(e.target)) dropdown.classList.remove('show');
+    });
+}
+
+// 初始化搜索选择框
+var selects = document.querySelectorAll('select.form-select');
+selects.forEach(function(select) {
+    initSearchableSelect(select.id);
+});
 </script>
 {% endblock %}

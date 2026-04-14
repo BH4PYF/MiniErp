@@ -1,0 +1,171 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>{% block title %}{{ company_name|default:"材料管理系统" }}{% endblock %}</title>
+    <!-- Bootstrap CSS（本地文件） -->
+    <link href="{% static 'vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
+    <!-- Bootstrap Icons（本地文件） -->
+    <link href="{% static 'vendor/bootstrap-icons/bootstrap-icons.min.css' %}" rel="stylesheet">
+    <!-- 移动端专用CSS -->
+    <link href="{% static 'css/mobile/mobile-style.css' %}" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="mobile-body">
+    <!-- 主内容 -->
+    <div class="mobile-container">
+        <!-- 顶部导航栏 -->
+        <header class="mobile-header">
+            <div class="mobile-header-left">
+                {% if not request.resolver_match.url_name == 'dashboard' %}
+                <button class="mobile-back-btn" onclick="window.history.back()">
+                    <i class="bi bi-arrow-left"></i>
+                </button>
+                {% endif %}
+            </div>
+            <div class="mobile-header-center">
+                <h1 class="mobile-header-title">{% block header_title %}{{ company_name|default:"系统首页" }}{% endblock %}</h1>
+            </div>
+            <div class="mobile-header-right">
+                {% block header_right %}{% endblock %}
+            </div>
+        </header>
+
+        <!-- 消息提示 -->
+        {% if messages %}
+        <div class="mobile-messages">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- 页面内容 -->
+        <main class="mobile-content">
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- 底部导航栏 -->
+        <footer class="mobile-bottom-nav">
+            {% if request.user.profile.is_supplier %}
+            <!-- 供应商导航 -->
+            <a href="{% url 'delivery_list' %}" class="mobile-bottom-nav-item {% if 'delivery' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="bi bi-truck mobile-bottom-nav-icon"></i>
+                <span class="mobile-bottom-nav-text">发货</span>
+            </a>
+            <a href="{% url 'profile_page' %}" class="mobile-bottom-nav-item {% if request.resolver_match.url_name == 'profile_page' %}active{% endif %}">
+                <i class="bi bi-person mobile-bottom-nav-icon"></i>
+                <span class="mobile-bottom-nav-text">我的</span>
+            </a>
+            {% else %}
+            <!-- 非供应商导航 -->
+            {% if not request.user.profile.is_subcontractor %}
+            <a href="{% url 'dashboard' %}" class="mobile-bottom-nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="bi bi-speedometer2 mobile-bottom-nav-icon"></i>
+                <span class="mobile-bottom-nav-text">首页</span>
+            </a>
+            <a href="{% url 'material_plan_list' %}" class="mobile-bottom-nav-item {% if 'material_plan' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="bi bi-clipboard-check mobile-bottom-nav-icon"></i>
+                <span class="mobile-bottom-nav-text">计划</span>
+            </a>
+            <a href="{% url 'inbound_list' %}" class="mobile-bottom-nav-item {% if 'inbound' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="bi bi-box-arrow-in-down mobile-bottom-nav-icon"></i>
+                <span class="mobile-bottom-nav-text">入库</span>
+            </a>
+            <a href="{% url 'report_page' %}" class="mobile-bottom-nav-item {% if 'report' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="bi bi-file-earmark-bar-graph mobile-bottom-nav-icon"></i>
+                <span class="mobile-bottom-nav-text">报表</span>
+            </a>
+            {% else %}
+            <!-- 分包商导航 -->
+            <a href="{% url 'measurement_list' %}" class="mobile-bottom-nav-item {% if 'measurement' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="bi bi-rulers mobile-bottom-nav-icon"></i>
+                <span class="mobile-bottom-nav-text">计量</span>
+            </a>
+            <a href="{% url 'settlement_list' %}" class="mobile-bottom-nav-item {% if 'settlement' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="bi bi-calculator mobile-bottom-nav-icon"></i>
+                <span class="mobile-bottom-nav-text">结算</span>
+            </a>
+            {% endif %}
+            <a href="{% url 'profile_page' %}" class="mobile-bottom-nav-item {% if request.resolver_match.url_name == 'profile_page' %}active{% endif %}">
+                <i class="bi bi-person mobile-bottom-nav-icon"></i>
+                <span class="mobile-bottom-nav-text">我的</span>
+            </a>
+            {% endif %}
+        </footer>
+    </div>
+
+    <!-- 通用删除确认模态框 -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white py-2">
+                    <h6 class="modal-title"><i class="bi bi-exclamation-triangle"></i> 确认删除</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <p class="mb-1">确定要删除以下内容吗？</p>
+                    <p class="fw-bold text-danger" id="deleteItemName"></p>
+                    <p class="text-muted small mb-0">此操作不可恢复</p>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-sm btn-danger" id="deleteConfirmBtn">确认删除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通用消息提示模态框 -->
+    <div class="modal fade" id="msgModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-header py-2" id="msgModalHeader">
+                    <h6 class="modal-title" id="msgModalTitle"><i class="bi bi-exclamation-circle"></i> 提示</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <p class="mb-0" id="msgModalBody"></p>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通用确认模态框 -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-header py-2 bg-primary text-white">
+                    <h6 class="modal-title" id="confirmModalTitle"><i class="bi bi-question-circle"></i> 确认操作</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <p class="mb-0" id="confirmModalBody"></p>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-sm btn-primary" id="confirmModalBtn">确认</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS（本地文件） -->
+    <script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
+    <!-- 移动端专用JS -->
+    <script src="{% static 'js/mobile/app/mobile-app.js' %}"></script>
+    <script src="{% static 'js/mobile/app/mobile-navigation.js' %}"></script>
+    <script src="{% static 'js/mobile/app/mobile-forms.js' %}"></script>
+    <script src="{% static 'js/mobile/app/mobile-performance.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

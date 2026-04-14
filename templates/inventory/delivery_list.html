@@ -55,8 +55,9 @@ function onShippingChange(planId, sel) {
 {% block content %}
 <div class="page-header">
     <h5><i class="bi bi-truck"></i> 发货管理</h5>
-    <div>        <a href="{% url 'export_deliveries' %}" class="btn btn-sm btn-outline-success">
-            <i class="bi bi-download"></i> 批量导出
+    <div>
+        <a href="{% url 'export_deliveries' %}" class="btn btn-sm btn-outline-success">
+            <i class="bi bi-download"></i> 导出Excel
         </a>
     </div>
 </div>

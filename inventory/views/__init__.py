@@ -12,8 +12,14 @@ from .supplier import (
 )
 from .inbound import inbound_list, inbound_save, inbound_delete, inbound_detail_api
 from .purchase_plan import (
-    purchase_plan_list, purchase_plan_save, purchase_plan_delete,
-    export_purchase_plans, purchase_plan_detail_api, purchase_plan_approve,
+    purchase_plan_list,
+    purchase_plan_create,
+    purchase_plan_save,
+    purchase_plan_delete,
+    purchase_plan_approve,
+    export_purchase_plans,
+    purchase_plan_detail_api,
+    get_inbound_quantity_api,
 )
 from .delivery import (
     delivery_list, export_deliveries, delivery_create, delivery_detail,

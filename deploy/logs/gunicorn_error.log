@@ -61,3 +61,127 @@
 [2026-04-11 12:56:52 +0800] [2682411] [INFO] Booting worker with pid: 2682411
 [2026-04-11 12:56:52 +0800] [2682436] [INFO] Booting worker with pid: 2682436
 [2026-04-11 12:56:52 +0800] [2682450] [INFO] Booting worker with pid: 2682450
+[2026-04-11 13:09:56 +0800] [2682369] [INFO] Handling signal: term
+[2026-04-11 13:09:56 +0800] [2682396] [INFO] Worker exiting (pid: 2682396)
+[2026-04-11 13:09:56 +0800] [2682407] [INFO] Worker exiting (pid: 2682407)
+[2026-04-11 13:09:56 +0800] [2682403] [INFO] Worker exiting (pid: 2682403)
+[2026-04-11 13:09:56 +0800] [2682408] [INFO] Worker exiting (pid: 2682408)
+[2026-04-11 13:09:56 +0800] [2682402] [INFO] Worker exiting (pid: 2682402)
+[2026-04-11 13:09:56 +0800] [2682404] [INFO] Worker exiting (pid: 2682404)
+[2026-04-11 13:09:56 +0800] [2682409] [INFO] Worker exiting (pid: 2682409)
+[2026-04-11 13:09:56 +0800] [2682436] [INFO] Worker exiting (pid: 2682436)
+[2026-04-11 13:09:56 +0800] [2682405] [INFO] Worker exiting (pid: 2682405)
+[2026-04-11 13:09:56 +0800] [2682398] [INFO] Worker exiting (pid: 2682398)
+[2026-04-11 13:09:56 +0800] [2682450] [INFO] Worker exiting (pid: 2682450)
+[2026-04-11 13:09:56 +0800] [2682397] [INFO] Worker exiting (pid: 2682397)
+[2026-04-11 13:09:56 +0800] [2682411] [INFO] Worker exiting (pid: 2682411)
+[2026-04-11 13:09:56 +0800] [2682399] [INFO] Worker exiting (pid: 2682399)
+[2026-04-11 13:09:56 +0800] [2682400] [INFO] Worker exiting (pid: 2682400)
+[2026-04-11 13:09:56 +0800] [2682406] [INFO] Worker exiting (pid: 2682406)
+[2026-04-11 13:09:56 +0800] [2682401] [INFO] Worker exiting (pid: 2682401)
+[2026-04-11 13:09:56 +0800] [2682369] [INFO] Worker (pid:2682396) was sent SIGTERM!
+[2026-04-11 13:09:56 +0800] [2682369] [INFO] Worker (pid:2682398) was sent SIGTERM!
+[2026-04-11 13:09:56 +0800] [2682369] [INFO] Worker (pid:2682402) was sent SIGTERM!
+[2026-04-11 13:09:56 +0800] [2682369] [INFO] Worker (pid:2682403) was sent SIGTERM!
+[2026-04-11 13:09:56 +0800] [2682369] [INFO] Worker (pid:2682404) was sent SIGTERM!
+[2026-04-11 13:09:56 +0800] [2682369] [INFO] Worker (pid:2682405) was sent SIGTERM!
+[2026-04-11 13:09:56 +0800] [2682369] [INFO] Worker (pid:2682407) was sent SIGTERM!
+[2026-04-11 13:09:56 +0800] [2682369] [INFO] Worker (pid:2682408) was sent SIGTERM!
+[2026-04-11 13:09:56 +0800] [2682369] [INFO] Worker (pid:2682409) was sent SIGTERM!
+[2026-04-11 13:09:56 +0800] [2682369] [INFO] Worker (pid:2682436) was sent SIGTERM!
+[2026-04-11 13:09:57 +0800] [2682369] [INFO] Shutting down: Master
+[2026-04-11 13:09:57 +0800] [2745568] [INFO] Starting gunicorn 25.1.0
+[2026-04-11 13:09:57 +0800] [2745568] [INFO] Listening at: http://0.0.0.0:7777 (2745568)
+[2026-04-11 13:09:57 +0800] [2745568] [INFO] Using worker: gthread
+[2026-04-11 13:09:57 +0800] [2745568] [INFO] Control socket listening at /home/abc/MiniErp/gunicorn.ctl
+[2026-04-11 13:09:57 +0800] [2745575] [INFO] Booting worker with pid: 2745575
+[2026-04-11 13:09:57 +0800] [2745576] [INFO] Booting worker with pid: 2745576
+[2026-04-11 13:09:57 +0800] [2745577] [INFO] Booting worker with pid: 2745577
+[2026-04-11 13:09:57 +0800] [2745578] [INFO] Booting worker with pid: 2745578
+[2026-04-11 13:09:57 +0800] [2745587] [INFO] Booting worker with pid: 2745587
+[2026-04-11 13:09:57 +0800] [2745597] [INFO] Booting worker with pid: 2745597
+[2026-04-11 13:09:57 +0800] [2745600] [INFO] Booting worker with pid: 2745600
+[2026-04-11 13:09:57 +0800] [2745623] [INFO] Booting worker with pid: 2745623
+[2026-04-11 13:09:57 +0800] [2745655] [INFO] Booting worker with pid: 2745655
+[2026-04-11 13:09:57 +0800] [2745656] [INFO] Booting worker with pid: 2745656
+[2026-04-11 13:09:57 +0800] [2745657] [INFO] Booting worker with pid: 2745657
+[2026-04-11 13:09:57 +0800] [2745658] [INFO] Booting worker with pid: 2745658
+[2026-04-11 13:09:58 +0800] [2745659] [INFO] Booting worker with pid: 2745659
+[2026-04-11 13:09:58 +0800] [2745662] [INFO] Booting worker with pid: 2745662
+[2026-04-11 13:09:58 +0800] [2745669] [INFO] Booting worker with pid: 2745669
+[2026-04-11 13:09:58 +0800] [2745682] [INFO] Booting worker with pid: 2745682
+[2026-04-11 13:09:58 +0800] [2745683] [INFO] Booting worker with pid: 2745683
+[2026-04-11 15:41:12 +0800] [2745657] [INFO] Worker exiting (pid: 2745657)
+[2026-04-11 15:41:12 +0800] [2745577] [INFO] Worker exiting (pid: 2745577)
+[2026-04-11 15:41:12 +0800] [2745662] [INFO] Worker exiting (pid: 2745662)
+[2026-04-11 15:41:12 +0800] [2745656] [INFO] Worker exiting (pid: 2745656)
+[2026-04-11 15:41:12 +0800] [2745669] [INFO] Worker exiting (pid: 2745669)
+[2026-04-11 15:41:12 +0800] [2745683] [INFO] Worker exiting (pid: 2745683)
+[2026-04-11 15:41:12 +0800] [2745568] [INFO] Handling signal: term
+[2026-04-11 15:41:12 +0800] [2745682] [INFO] Worker exiting (pid: 2745682)
+[2026-04-11 15:41:12 +0800] [2745659] [INFO] Worker exiting (pid: 2745659)
+[2026-04-11 15:41:12 +0800] [2745597] [INFO] Worker exiting (pid: 2745597)
+[2026-04-11 15:41:12 +0800] [2745578] [INFO] Worker exiting (pid: 2745578)
+[2026-04-11 15:41:12 +0800] [2745623] [INFO] Worker exiting (pid: 2745623)
+[2026-04-11 15:41:12 +0800] [2745575] [INFO] Worker exiting (pid: 2745575)
+[2026-04-11 15:41:12 +0800] [2745576] [INFO] Worker exiting (pid: 2745576)
+[2026-04-11 15:41:12 +0800] [2745658] [INFO] Worker exiting (pid: 2745658)
+[2026-04-11 15:41:12 +0800] [2745655] [INFO] Worker exiting (pid: 2745655)
+[2026-04-11 15:41:12 +0800] [2745600] [INFO] Worker exiting (pid: 2745600)
+[2026-04-11 15:41:12 +0800] [2745587] [INFO] Worker exiting (pid: 2745587)
+[2026-04-11 15:41:13 +0800] [2745568] [INFO] Worker (pid:2745577) was sent SIGTERM!
+[2026-04-11 15:41:13 +0800] [2745568] [INFO] Worker (pid:2745656) was sent SIGTERM!
+[2026-04-11 15:41:13 +0800] [2745568] [INFO] Worker (pid:2745657) was sent SIGTERM!
+[2026-04-11 15:41:13 +0800] [2745568] [INFO] Worker (pid:2745662) was sent SIGTERM!
+[2026-04-11 15:41:13 +0800] [2745568] [INFO] Worker (pid:2745683) was sent SIGTERM!
+[2026-04-11 15:41:22 +0800] [2745568] [INFO] Shutting down: Master
+[2026-04-11 23:06:18 +0800] [2384] [INFO] Starting gunicorn 25.1.0
+[2026-04-11 23:06:18 +0800] [2384] [INFO] Listening at: http://0.0.0.0:7777 (2384)
+[2026-04-11 23:06:18 +0800] [2384] [INFO] Using worker: gthread
+[2026-04-11 23:06:18 +0800] [2384] [INFO] Control socket listening at /home/abc/MiniErp/gunicorn.ctl
+[2026-04-11 23:06:18 +0800] [2460] [INFO] Booting worker with pid: 2460
+[2026-04-11 23:06:18 +0800] [2462] [INFO] Booting worker with pid: 2462
+[2026-04-11 23:06:18 +0800] [2511] [INFO] Booting worker with pid: 2511
+[2026-04-11 23:06:18 +0800] [2532] [INFO] Booting worker with pid: 2532
+[2026-04-11 23:06:18 +0800] [2533] [INFO] Booting worker with pid: 2533
+[2026-04-11 23:06:18 +0800] [2534] [INFO] Booting worker with pid: 2534
+[2026-04-11 23:06:18 +0800] [2535] [INFO] Booting worker with pid: 2535
+[2026-04-11 23:06:18 +0800] [2536] [INFO] Booting worker with pid: 2536
+[2026-04-11 23:06:18 +0800] [2537] [INFO] Booting worker with pid: 2537
+[2026-04-11 23:06:18 +0800] [2538] [INFO] Booting worker with pid: 2538
+[2026-04-11 23:06:18 +0800] [2539] [INFO] Booting worker with pid: 2539
+[2026-04-11 23:06:19 +0800] [2541] [INFO] Booting worker with pid: 2541
+[2026-04-11 23:06:19 +0800] [2542] [INFO] Booting worker with pid: 2542
+[2026-04-11 23:06:19 +0800] [2543] [INFO] Booting worker with pid: 2543
+[2026-04-11 23:06:19 +0800] [2544] [INFO] Booting worker with pid: 2544
+[2026-04-11 23:06:19 +0800] [2554] [INFO] Booting worker with pid: 2554
+[2026-04-11 23:06:19 +0800] [2555] [INFO] Booting worker with pid: 2555
+[2026-04-11 23:13:49 +0800] [2384] [INFO] Handling signal: term
+[2026-04-11 23:13:49 +0800] [2532] [INFO] Worker exiting (pid: 2532)
+[2026-04-11 23:13:49 +0800] [2511] [INFO] Worker exiting (pid: 2511)
+[2026-04-11 23:13:49 +0800] [2462] [INFO] Worker exiting (pid: 2462)
+[2026-04-11 23:13:49 +0800] [2460] [INFO] Worker exiting (pid: 2460)
+[2026-04-11 23:13:49 +0800] [2534] [INFO] Worker exiting (pid: 2534)
+[2026-04-11 23:13:49 +0800] [2535] [INFO] Worker exiting (pid: 2535)
+[2026-04-11 23:13:49 +0800] [2555] [INFO] Worker exiting (pid: 2555)
+[2026-04-11 23:13:49 +0800] [2544] [INFO] Worker exiting (pid: 2544)
+[2026-04-11 23:13:49 +0800] [2538] [INFO] Worker exiting (pid: 2538)
+[2026-04-11 23:13:49 +0800] [2533] [INFO] Worker exiting (pid: 2533)
+[2026-04-11 23:13:49 +0800] [2537] [INFO] Worker exiting (pid: 2537)
+[2026-04-11 23:13:49 +0800] [2542] [INFO] Worker exiting (pid: 2542)
+[2026-04-11 23:13:49 +0800] [2539] [INFO] Worker exiting (pid: 2539)
+[2026-04-11 23:13:49 +0800] [2543] [INFO] Worker exiting (pid: 2543)
+[2026-04-11 23:13:49 +0800] [2536] [INFO] Worker exiting (pid: 2536)
+[2026-04-11 23:13:49 +0800] [2541] [INFO] Worker exiting (pid: 2541)
+[2026-04-11 23:13:49 +0800] [2554] [INFO] Worker exiting (pid: 2554)
+[2026-04-11 23:13:49 +0800] [2384] [INFO] Worker (pid:2460) was sent SIGTERM!
+[2026-04-11 23:13:49 +0800] [2384] [INFO] Worker (pid:2462) was sent SIGTERM!
+[2026-04-11 23:13:49 +0800] [2384] [INFO] Worker (pid:2511) was sent SIGTERM!
+[2026-04-11 23:13:49 +0800] [2384] [INFO] Worker (pid:2532) was sent SIGTERM!
+[2026-04-11 23:13:49 +0800] [2384] [INFO] Worker (pid:2533) was sent SIGTERM!
+[2026-04-11 23:13:49 +0800] [2384] [INFO] Worker (pid:2534) was sent SIGTERM!
+[2026-04-11 23:13:49 +0800] [2384] [INFO] Worker (pid:2537) was sent SIGTERM!
+[2026-04-11 23:13:49 +0800] [2384] [INFO] Worker (pid:2542) was sent SIGTERM!
+[2026-04-11 23:13:49 +0800] [2384] [INFO] Worker (pid:2544) was sent SIGTERM!
+[2026-04-11 23:13:49 +0800] [2384] [INFO] Worker (pid:2555) was sent SIGTERM!
+[2026-04-11 23:13:49 +0800] [2384] [INFO] Shutting down: Master

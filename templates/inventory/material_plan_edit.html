@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}编辑材料计划{% endblock %}
+{% block page_title %}编辑材料计划{% endblock %}
+{% block content %}
+<style>
+    /* 材料计划表格样式 */
+    .material-plan-item-table th,
+    .material-plan-item-table td {
+        vertical-align: middle;
+    }
+    .material-plan-item-table input {
+        width: 100%;
+    }
+    .add-item-btn {
+        margin-top: 24px;
+    }
+</style>
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form method="post" action="{% url 'material_plan_edit' plan.id %}">
+            {% csrf_token %}
+            <div class="row mb-4">
+                <label class="col-sm-2 col-form-label">项目名称 <span class="text-danger">*</span></label>
+                <div class="col-sm-10">
+                    <select class="form-select" name="project" required>
+                        <option value="">请选择项目</option>
+                        {% for p in projects %}
+                        <option value="{{ p.pk }}" {% if p.pk == plan.project.pk %}selected{% endif %}>{{ p.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <h6 class="mb-3">材料清单</h6>
+            <div class="table-responsive mb-4">
+                <table class="table table-hover material-plan-item-table" id="materialPlanItemTable">
+                    <thead>
+                        <tr>
+                            <th>清单序号</th>
+                            <th>材料名称 <span class="text-danger">*</span></th>
+                            <th>规格</th>
+                            <th>单位</th>
+                            <th>计划数量 <span class="text-danger">*</span></th>
+                            <th>标准单价</th>
+                            <th>金额</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in plan.items.all %}
+                        <tr class="material-plan-item-row">
+                            <td><input type="number" class="form-control form-control-sm" name="item_order" value="{{ forloop.counter }}" required></td>
+                            <td>
+                                <select class="form-select form-select-sm material-select" name="material" required>
+                                    <option value="">请选择材料</option>
+                                    {% for m in materials %}
+                                    <option value="{{ m.pk }}" data-spec="{{ m.spec }}" data-unit="{{ m.unit }}" data-standard-price="{{ m.standard_price }}" {% if m.pk == item.material.pk %}selected{% endif %}>
+                                        {{ m.name }} ({{ m.spec }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td><input type="text" class="form-control form-control-sm spec-input" name="spec" value="{{ item.material.spec }}" readonly></td>
+                            <td><input type="text" class="form-control form-control-sm unit-input" name="unit" value="{{ item.unit }}" readonly></td>
+                            <td><input type="number" step="0.01" class="form-control form-control-sm quantity-input" name="quantity" value="{{ item.quantity }}" required></td>
+                            <td><input type="number" step="0.01" class="form-control form-control-sm standard-price-input" name="standard_price" value="{{ item.unit_price }}" readonly></td>
+                            <td><input type="number" step="0.01" class="form-control form-control-sm amount-input" name="amount" value="{{ item.amount }}" readonly></td>
+                            <td><button type="button" class="btn btn-sm btn-outline-danger remove-item-btn"><i class="bi bi-trash"></i></button></td>
+                        </tr>
+                        {% empty %}
+                        <tr class="material-plan-item-row">
+                            <td><input type="number" class="form-control form-control-sm" name="item_order" value="1" required></td>
+                            <td>
+                                <select class="form-select form-select-sm material-select" name="material" required>
+                                    <option value="">请选择材料</option>
+                                    {% for m in materials %}
+                                    <option value="{{ m.pk }}" data-spec="{{ m.spec }}" data-unit="{{ m.unit }}" data-standard-price="{{ m.standard_price }}">
+                                        {{ m.name }} ({{ m.spec }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td><input type="text" class="form-control form-control-sm spec-input" name="spec" readonly></td>
+                            <td><input type="text" class="form-control form-control-sm unit-input" name="unit" readonly></td>
+                            <td><input type="number" step="0.01" class="form-control form-control-sm quantity-input" name="quantity" required></td>
+                            <td><input type="number" step="0.01" class="form-control form-control-sm standard-price-input" name="standard_price" readonly></td>
+                            <td><input type="number" step="0.01" class="form-control form-control-sm amount-input" name="amount" readonly></td>
+                            <td><button type="button" class="btn btn-sm btn-outline-danger remove-item-btn"><i class="bi bi-trash"></i></button></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-sm-10 offset-sm-2">
+                    <button type="button" class="btn btn-sm btn-outline-success add-item-btn" id="addMaterialPlanItemBtn"><i class="bi bi-plus-lg"></i> 添加材料</button>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-sm-10 offset-sm-2">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> 保存</button>
+                    <a href="{% url 'material_plan_list' %}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> 返回</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 处理材料选择
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('material-select')) {
+                const selectedOption = e.target.options[e.target.selectedIndex];
+                const row = e.target.closest('.material-plan-item-row');
+                
+                row.querySelector('.spec-input').value = selectedOption.dataset.spec || '';
+                row.querySelector('.unit-input').value = selectedOption.dataset.unit || '';
+                row.querySelector('.standard-price-input').value = selectedOption.dataset.standardPrice || '';
+                
+                // 计算金额
+                calculateAmount(row);
+            }
+        });
+        
+        // 处理计划数量变化
+        document.addEventListener('input', function(e) {
+            if (e.target.classList.contains('quantity-input')) {
+                const row = e.target.closest('.material-plan-item-row');
+                calculateAmount(row);
+            }
+        });
+        
+        // 计算金额
+        function calculateAmount(row) {
+            const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
+            const standardPrice = parseFloat(row.querySelector('.standard-price-input').value) || 0;
+            const amount = quantity * standardPrice;
+            row.querySelector('.amount-input').value = amount.toFixed(2);
+        }
+        
+        // 添加材料行
+        document.getElementById('addMaterialPlanItemBtn').addEventListener('click', function() {
+            const table = document.getElementById('materialPlanItemTable');
+            const tbody = table.querySelector('tbody');
+            const lastRow = tbody.lastElementChild;
+            const newRow = lastRow.cloneNode(true);
+            
+            // 清除输入值
+            const inputs = newRow.querySelectorAll('input');
+            inputs.forEach(input => {
+                if (!input.readOnly) {
+                    input.value = '';
+                } else {
+                    input.value = '';
+                }
+            });
+            
+            // 重置选择框
+            const select = newRow.querySelector('select');
+            select.value = '';
+            
+            // 更新序号
+            const rowCount = tbody.children.length + 1;
+            newRow.querySelector('input[name="item_order"]').value = rowCount;
+            
+            // 为新行的按钮添加事件
+            newRow.querySelector('.remove-item-btn').addEventListener('click', function() {
+                if (tbody.children.length > 1) {
+                    this.closest('.material-plan-item-row').remove();
+                    // 重新编号
+                    updateRowNumbers();
+                }
+            });
+            
+            tbody.appendChild(newRow);
+        });
+        
+        // 删除材料行
+        document.querySelectorAll('.remove-item-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tbody = this.closest('tbody');
+                if (tbody.children.length > 1) {
+                    this.closest('.material-plan-item-row').remove();
+                    // 重新编号
+                    updateRowNumbers();
+                }
+            });
+        });
+        
+        // 更新行号
+        function updateRowNumbers() {
+            const rows = document.querySelectorAll('.material-plan-item-row');
+            rows.forEach((row, index) => {
+                row.querySelector('input[name="item_order"]').value = index + 1;
+            });
+        }
+    });
+</script>
+{% endblock %}

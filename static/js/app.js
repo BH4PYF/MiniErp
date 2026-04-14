@@ -239,8 +239,18 @@ function ajaxSubmitForm(form, options) {
                 options.onSuccess(data);
             } else {
                 showMsg(data.message || '操作成功', 'success');
+                // 保存项目字段的值
+                var projectField = form.querySelector('[name="project_id"]');
+                var projectValue = projectField ? projectField.value : '';
+                
                 // 重置表单
                 form.reset();
+                
+                // 恢复项目字段的值
+                if (projectField && projectValue) {
+                    projectField.value = projectValue;
+                }
+                
                 // 如果有模态框，关闭它
                 var modalEl = form.closest('.modal');
                 if (modalEl) {

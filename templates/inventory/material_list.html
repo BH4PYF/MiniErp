@@ -91,12 +91,13 @@
     <form method="get" class="row g-2 align-items-end">
         <div class="col-auto"><input type="text" class="form-control form-control-sm" name="q" value="{{ q }}" placeholder="搜索编号/名称/规格"></div>
         <div class="col-auto">
-            <select class="form-select form-select-sm" name="category">
+            <select class="form-select form-select-sm" name="category" id="filterCategory">
                 <option value="">全部分类</option>
                 {% for c in categories %}<option value="{{ c.id }}" {% if cat_id == c.id|stringformat:"d" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
             </select>
         </div>
-        <div class="col-auto"><button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i> 查询</button></div>
+        <div class="col-auto"><button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i> 筛选</button></div>
+        <div class="col-auto"><a href="{% url 'material_list' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-x-circle"></i> 重置</a></div>
         <div class="col-auto ms-auto">
             <a href="{% url 'download_import_template' %}?type=material" class="btn btn-sm btn-outline-secondary"><i class="bi bi-file-earmark-arrow-down"></i> 导入模板</a>
             <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#importModal"><i class="bi bi-upload"></i> 批量导入</button>
@@ -106,7 +107,7 @@
 </div>
 <div class="card shadow-sm">
     <div class="card-body p-0">
-        <div class="table-responsive">
+        <div class="table-responsive table-to-card">
         <table class="table table-hover mb-0 table-material-list">
             <thead><tr><th>编号</th><th>名称 <span class="text-danger">*</span></th><th>分类 <span class="text-danger">*</span></th><th>规格 <span class="text-danger">*</span></th><th>单位 <span class="text-danger">*</span></th><th>标准单价 <span class="text-danger">*</span></th><th>累计入库量</th><th>加权成本</th><th>操作</th></tr></thead>
             <tbody>
@@ -143,15 +144,15 @@
             </form>
             {% for d in material_data %}
             <tr>
-                <td>{{ d.obj.code }}</td>
-                <td>{{ d.obj.name }}</td>
-                <td>{{ d.obj.category.name }}</td>
-                <td>{{ d.obj.spec|default:'-' }}</td>
-                <td>{{ d.obj.unit }}</td>
-                <td>{{ d.obj.standard_price|floatformat:2 }}</td>
-                <td class="stock-{{ d.status_key }}">{{ d.stock|floatformat:2 }}</td>
-                <td>{{ d.avg_cost|floatformat:2 }}</td>
-                <td>
+                <td data-label="编号">{{ d.obj.code }}</td>
+                <td data-label="名称">{{ d.obj.name }}</td>
+                <td data-label="分类">{{ d.obj.category.name }}</td>
+                <td data-label="规格">{{ d.obj.spec|default:'-' }}</td>
+                <td data-label="单位">{{ d.obj.unit }}</td>
+                <td data-label="标准单价">{{ d.obj.standard_price|floatformat:2 }}</td>
+                <td data-label="累计入库量" class="stock-{{ d.status_key }}">{{ d.stock|floatformat:2 }}</td>
+                <td data-label="加权成本">{{ d.avg_cost|floatformat:2 }}</td>
+                <td data-label="操作">
                     <button class="btn btn-sm btn-outline-primary btn-edit-material" data-id="{{ d.obj.pk }}"><i class="bi bi-pencil"></i></button>
                     {% if request.user.profile.is_admin %}
                     <button class="btn btn-sm btn-outline-danger btn-delete-material" data-url="{% url 'material_delete' d.obj.pk %}" data-name="{{ d.obj.name|escapejs }}"><i class="bi bi-trash"></i></button>
@@ -381,5 +382,74 @@ function handleMaterialSaveSuccess(data) {
         location.reload();
     }, 1500);
 }
+
+function initSearchableSelect(selectId) {
+    var select = document.getElementById(selectId);
+    if (!select) return;
+    var wrapper = document.createElement('div');
+    wrapper.style.position = 'relative';
+    wrapper.style.display = 'inline-block';
+    select.parentNode.insertBefore(wrapper, select);
+    wrapper.appendChild(select);
+    select.style.display = 'none';
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'form-control form-control-sm';
+    input.placeholder = select.options[0].text;
+    input.style.width = '180px';
+    wrapper.appendChild(input);
+    var dropdown = document.createElement('div');
+    dropdown.className = 'dropdown-menu';
+    dropdown.style.cssText = 'position:absolute;top:100%;left:0;z-index:1000;max-height:200px;overflow-y:auto;width:100%;';
+    wrapper.appendChild(dropdown);
+    var currentVal = select.value;
+    if (currentVal) {
+        for (var i = 0; i < select.options.length; i++) {
+            if (select.options[i].value == currentVal) {
+                input.value = select.options[i].text;
+                break;
+            }
+        }
+    }
+    function renderOptions(filter) {
+        dropdown.innerHTML = '';
+        var f = (filter || '').toLowerCase();
+        for (var i = 0; i < select.options.length; i++) {
+            var opt = select.options[i];
+            if (!opt.value) continue;
+            if (f && opt.text.toLowerCase().indexOf(f) === -1) continue;
+            var item = document.createElement('a');
+            item.className = 'dropdown-item';
+            item.href = '#';
+            item.textContent = opt.text;
+            item.setAttribute('data-value', opt.value);
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                select.value = this.getAttribute('data-value');
+                input.value = this.textContent;
+                dropdown.classList.remove('show');
+            });
+            dropdown.appendChild(item);
+        }
+        if (dropdown.children.length === 0) {
+            var empty = document.createElement('span');
+            empty.className = 'dropdown-item text-muted';
+            empty.textContent = '无匹配项';
+            dropdown.appendChild(empty);
+        }
+        dropdown.classList.add('show');
+    }
+    input.addEventListener('focus', function() { renderOptions(this.value); });
+    input.addEventListener('input', function() { renderOptions(this.value); });
+    document.addEventListener('click', function(e) {
+        if (!wrapper.contains(e.target)) dropdown.classList.remove('show');
+    });
+}
+
+// 初始化搜索选择框
+var selects = document.querySelectorAll('select.form-select');
+selects.forEach(function(select) {
+    initSearchableSelect(select.id);
+});
 </script>
 {% endblock %}

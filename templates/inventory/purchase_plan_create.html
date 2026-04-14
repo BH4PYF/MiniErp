@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% block title %}创建采购申请{% endblock %}
+{% block page_title %}创建采购申请{% endblock %}
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form method="post" action="{% url 'purchase_plan_save' %}" id="createForm">
+            {% csrf_token %}
+            <input type="hidden" name="id" value="">
+            
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label for="project_id" class="form-label">项目名称 <span class="text-danger">*</span></label>
+                    <select class="form-select" name="project_id" id="project_id" required onchange="onProjectChange(this)">
+                        <option value="">请选择</option>
+                        {% for p in projects %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="material_id" class="form-label">材料名称 <span class="text-danger">*</span></label>
+                    <select class="form-select" name="material_id" id="material_id" required onchange="onMaterialChange(this)">
+                        <option value="">请选择</option>
+                        {% for m in materials %}
+                        <option value="{{ m.id }}" data-unit="{{ m.unit }}" data-price="{{ m.standard_price }}" data-spec="{{ m.spec }}">{{ m.name }} ({{ m.spec }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="supplier_id" class="form-label">供应商 <span class="text-danger">*</span></label>
+                    <select class="form-select" name="supplier_id" id="supplier_id" required>
+                        <option value="">请选择</option>
+                        {% for s in suppliers %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label for="plan_quantity" class="form-label">计划数量</label>
+                    <input type="number" step="0.01" min="0" class="form-control" name="plan_quantity" id="plan_quantity" readonly>
+                </div>
+                <div class="col-md-4">
+                    <label for="inbound_quantity" class="form-label">已入库数量</label>
+                    <input type="number" step="0.01" min="0" class="form-control" name="inbound_quantity" id="inbound_quantity" readonly>
+                </div>
+                <div class="col-md-4">
+                    <label for="quantity" class="form-label">本次采购数量 <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input type="number" step="0.01" min="0.01" class="form-control" name="quantity" id="quantity" required oninput="calcTotal()">
+                        <span class="input-group-text" id="unitDisplay"></span>
+                        <input type="hidden" name="unit" id="unit" value="">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label for="unit_price" class="form-label">预计单价</label>
+                    <input type="number" step="0.01" min="0" class="form-control" name="unit_price" id="unit_price" readonly>
+                </div>
+                <div class="col-md-4">
+                    <label for="total_amount" class="form-label">预计金额</label>
+                    <input type="number" step="0.01" min="0" class="form-control" name="total_amount" id="total_amount" readonly>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{% url 'purchase_plan_list' %}" class="btn btn-outline-secondary">取消</a>
+                <button type="submit" class="btn btn-success">创建采购申请</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 项目选择变化时的处理
+function onProjectChange(sel) {
+    // 重置计划数量和已入库数量
+    document.getElementById('plan_quantity').value = 0;
+    document.getElementById('inbound_quantity').value = 0;
+    
+    // 如果材料已经被选择，重新获取计划数量和已入库数量
+    var materialSelect = document.getElementById('material_id');
+    if (materialSelect && materialSelect.value) {
+        onMaterialChange(materialSelect);
+    }
+}
+
+// 材料选择变化时的处理
+function onMaterialChange(sel) {
+    var opt = sel.options[sel.selectedIndex];
+    // 自动填充单位
+    var unitInput = document.getElementById('unit');
+    var unitDisplay = document.getElementById('unitDisplay');
+    var unit = opt.dataset.unit || '';
+    if(unit){
+        unitInput.value = unit;
+        unitDisplay.textContent = unit;
+    } else {
+        unitInput.value = '';
+        unitDisplay.textContent = '';
+    }
+    // 自动填充预计单价
+    var price = opt.dataset.price || '0';
+    document.getElementById('unit_price').value = price;
+    // 计算预计金额
+    calcTotal();
+    
+    // 获取项目ID
+    var projectId = document.getElementById('project_id').value;
+    // 获取材料ID
+    var materialId = sel.value;
+    // 如果选择了项目和材料，获取计划数量和已入库数量
+    if (projectId && materialId) {
+        fetch('/api/material-plan-items/' + projectId + '/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.items) {
+                    // 查找该材料的计划数量
+                    var planQuantity = 0;
+                    data.items.forEach(item => {
+                        if (parseInt(item.material_id) === parseInt(materialId)) {
+                            planQuantity = parseFloat(item.quantity) || 0;
+                        }
+                    });
+                    // 填充计划数量
+                    document.getElementById('plan_quantity').value = planQuantity;
+                    // 获取已入库数量
+                    fetch('/api/inbound-quantity/' + projectId + '/' + materialId + '/')
+                        .then(response => response.json())
+                        .then(data => {
+                            var inboundQuantity = parseFloat(data.inbound_quantity) || 0;
+                            document.getElementById('inbound_quantity').value = inboundQuantity;
+                        })
+                        .catch(error => console.error('Error fetching inbound quantity:', error));
+                }
+            })
+            .catch(error => console.error('Error fetching material plans:', error));
+    } else {
+        // 如果项目或材料为空，重置计划数量和已入库数量
+        document.getElementById('plan_quantity').value = 0;
+        document.getElementById('inbound_quantity').value = 0;
+    }
+}
+
+// 计算预计金额
+function calcTotal() {
+    var qty = parseFloat(document.getElementById('quantity').value) || 0;
+    var price = parseFloat(document.getElementById('unit_price').value) || 0;
+    var total = (qty * price).toFixed(2);
+    document.getElementById('total_amount').value = total;
+}
+
+// 表单提交处理
+document.getElementById('createForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // 获取表单数据
+    var formData = new FormData(this);
+    var submitBtn = this.querySelector('button[type="submit"]');
+    var originalText = submitBtn.innerHTML;
+    
+    // 显示加载状态
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> 处理中...';
+    
+    // 发送AJAX请求
+    fetch(this.action, {
+        method: 'POST',
+        headers: {'X-CSRFToken': getCookie('csrftoken'), 'X-Requested-With': 'XMLHttpRequest'},
+        body: formData,
+    }).then(function(resp) {
+        return resp.json();
+    }).then(function(data) {
+        if (data.success) {
+            showMsg(data.message || '操作成功', 'success');
+            // 跳转到采购计划列表页面
+            setTimeout(function() {
+                window.location.href = '{% url 'purchase_plan_list' %}';
+            }, 800);
+        } else {
+            showMsg(data.error || '操作失败');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    }).catch(function(err) {
+        console.error('AJAX Error:', err);
+        showMsg('请求失败，请重试');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    });
+});
+
+// 获取 CSRF Token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

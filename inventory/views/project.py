@@ -13,12 +13,17 @@ from .utils import admin_required, log_operation, parse_positive_decimal, combin
 def project_list(request):
     q = request.GET.get('q', '')
     status_filter = request.GET.get('status', None)
+    selected_project = request.GET.get('project', None)
     
     # 使用服务层获取项目列表和统计信息
     projects_with_stats = ProjectService.get_projects_with_statistics(
         search_query=q,
         status_filter=status_filter
     )
+    
+    # 项目筛选
+    if selected_project:
+        projects_with_stats = [p for p in projects_with_stats if str(p.id) == selected_project]
     
     # 分页处理
     paginator = Paginator(projects_with_stats, 20)
@@ -27,6 +32,7 @@ def project_list(request):
 
     return render(request, 'inventory/project_list.html', {
         'projects': page_obj, 'q': q, 'status_filter': status_filter,
+        'selected_project': selected_project,
         'page_obj': page_obj,
     })
 

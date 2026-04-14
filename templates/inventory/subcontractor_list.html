@@ -72,14 +72,25 @@
 </style>
 <div class="page-header">
     <h5><i class="bi bi-buildings"></i> 分包商档案</h5>
-    <div>
-        <a href="{% url 'export_subcontractors' %}" class="btn btn-sm btn-outline-success"><i class="bi bi-download"></i> 导出Excel</a>
-    </div>
 </div>
 <div class="filter-bar">
     <form method="get" class="row g-2 align-items-end">
         <div class="col-auto"><input type="text" class="form-control form-control-sm" name="q" value="{{ q }}" placeholder="搜索名称/负责人"></div>
-        <div class="col-auto"><button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i> 查询</button></div>
+        <div class="col-auto">
+            <select class="form-select form-select-sm" name="main_type" id="filterMainType">
+                <option value="">全部类型</option>
+                {% for category in categories %}
+                <option value="{{ category.category_name }}" {% if main_type == category.category_name %}selected{% endif %}>{{ category.category_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto"><button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i> 筛选</button></div>
+        <div class="col-auto"><a href="{% url 'subcontractor_list' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-x-circle"></i> 重置</a></div>
+        <div class="col-auto ms-auto">
+            <a href="{% url 'download_import_template' %}?type=subcontractor" class="btn btn-sm btn-outline-secondary"><i class="bi bi-file-earmark-arrow-down"></i> 导入模板</a>
+            <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#importSubcontractorModal"><i class="bi bi-upload"></i> 批量导入</button>
+            <a href="{% url 'export_subcontractors' %}" class="btn btn-sm btn-outline-success"><i class="bi bi-download"></i> 批量导出</a>
+        </div>
     </form>
 </div>
 <div class="card shadow-sm">
@@ -162,8 +173,72 @@
         </div>
     </div>
 </div>
+
+<!-- 批量导入模态框 -->
+<div class="modal fade" id="importSubcontractorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white py-2">
+                <h6 class="modal-title"><i class="bi bi-upload"></i> 批量导入分包商</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">请先<a href="{% url 'download_import_template' %}?type=subcontractor">下载导入模板</a>，按模板格式填写数据后上传。重复的分包商（名称相同）将自动跳过。</p>
+                <form id="importSubcontractorForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="type" value="subcontractor">
+                    <div class="mb-3">
+                        <input type="file" class="form-control" name="file" accept=".xlsx" required>
+                    </div>
+                </form>
+                <div id="importSubcontractorResult" class="d-none">
+                    <div class="alert alert-info small mb-0" id="importSubcontractorResultMsg"></div>
+                    <ul class="list-unstyled small text-danger mt-2 mb-0" id="importSubcontractorErrors"></ul>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-sm btn-info" id="importSubcontractorBtn" onclick="doImportSubcontractor()"><i class="bi bi-upload"></i> 开始导入</button>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
 {% endblock %}
 {% block extra_js %}
+
+<script>
+function doImportSubcontractor() {
+    const form = document.getElementById('importSubcontractorForm');
+    const fileInput = form.querySelector('input[type=file]');
+    if (!fileInput.files.length) { showMsg('请选择文件'); return; }
+    const btn = document.getElementById('importSubcontractorBtn');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 导入中...';
+    const formData = new FormData(form);
+    fetch('{% url "import_excel" %}', {method: 'POST', body: formData})
+        .then(r => r.json())
+        .then(data => {
+            const resultDiv = document.getElementById('importSubcontractorResult');
+            const msgDiv = document.getElementById('importSubcontractorResultMsg');
+            const errList = document.getElementById('importSubcontractorErrors');
+            resultDiv.classList.remove('d-none');
+            if (data.success) {
+                msgDiv.className = 'alert alert-success small mb-0';
+                msgDiv.textContent = data.message;
+                errList.innerHTML = '';
+                if (data.errors && data.errors.length) {
+                    data.errors.forEach(e => { const li = document.createElement('li'); li.textContent = e; errList.appendChild(li); });
+                }
+                if (data.created > 0) setTimeout(() => location.reload(), 1500);
+            } else {
+                msgDiv.className = 'alert alert-danger small mb-0';
+                msgDiv.textContent = data.error;
+            }
+        })
+        .catch(() => showMsg('请求失败'))
+        .finally(() => { btn.disabled = false; btn.innerHTML = '<i class="bi bi-upload"></i> 开始导入'; });
+}
+</script>
 <script>
 function deleteItem(pk, name, type) {
     document.getElementById('deleteItemName').textContent = name;
@@ -177,5 +252,74 @@ function deleteItem(pk, name, type) {
     document.getElementById('deleteForm').action = urlMap[type];
     new bootstrap.Modal(document.getElementById('deleteModal')).show();
 }
+
+function initSearchableSelect(selectId) {
+    var select = document.getElementById(selectId);
+    if (!select) return;
+    var wrapper = document.createElement('div');
+    wrapper.style.position = 'relative';
+    wrapper.style.display = 'inline-block';
+    select.parentNode.insertBefore(wrapper, select);
+    wrapper.appendChild(select);
+    select.style.display = 'none';
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'form-control form-control-sm';
+    input.placeholder = select.options[0].text;
+    input.style.width = '180px';
+    wrapper.appendChild(input);
+    var dropdown = document.createElement('div');
+    dropdown.className = 'dropdown-menu';
+    dropdown.style.cssText = 'position:absolute;top:100%;left:0;z-index:1000;max-height:200px;overflow-y:auto;width:100%;';
+    wrapper.appendChild(dropdown);
+    var currentVal = select.value;
+    if (currentVal) {
+        for (var i = 0; i < select.options.length; i++) {
+            if (select.options[i].value == currentVal) {
+                input.value = select.options[i].text;
+                break;
+            }
+        }
+    }
+    function renderOptions(filter) {
+        dropdown.innerHTML = '';
+        var f = (filter || '').toLowerCase();
+        for (var i = 0; i < select.options.length; i++) {
+            var opt = select.options[i];
+            if (!opt.value) continue;
+            if (f && opt.text.toLowerCase().indexOf(f) === -1) continue;
+            var item = document.createElement('a');
+            item.className = 'dropdown-item';
+            item.href = '#';
+            item.textContent = opt.text;
+            item.setAttribute('data-value', opt.value);
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                select.value = this.getAttribute('data-value');
+                input.value = this.textContent;
+                dropdown.classList.remove('show');
+            });
+            dropdown.appendChild(item);
+        }
+        if (dropdown.children.length === 0) {
+            var empty = document.createElement('span');
+            empty.className = 'dropdown-item text-muted';
+            empty.textContent = '无匹配项';
+            dropdown.appendChild(empty);
+        }
+        dropdown.classList.add('show');
+    }
+    input.addEventListener('focus', function() { renderOptions(this.value); });
+    input.addEventListener('input', function() { renderOptions(this.value); });
+    document.addEventListener('click', function(e) {
+        if (!wrapper.contains(e.target)) dropdown.classList.remove('show');
+    });
+}
+
+// 初始化搜索选择框
+var selects = document.querySelectorAll('select.form-select');
+selects.forEach(function(select) {
+    initSearchableSelect(select.id);
+});
 </script>
 {% endblock %}

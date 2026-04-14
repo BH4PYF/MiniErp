@@ -13,8 +13,24 @@ def budget_list(request):
     if not request.user.is_authenticated:
         return redirect('login')
     
+    # 获取筛选参数
+    selected_project = request.GET.get('project')
+    
+    # 构建查询集
     budgets = Budget.objects.all()
-    return render(request, 'inventory/budget_list.html', {'budgets': budgets})
+    
+    # 应用筛选
+    if selected_project:
+        budgets = budgets.filter(project_id=selected_project)
+    
+    # 获取所有项目和分包商用于筛选
+    projects = Project.objects.all()
+    
+    return render(request, 'inventory/budget_list.html', {
+        'budgets': budgets,
+        'projects': projects,
+        'selected_project': selected_project
+    })
 
 
 def budget_create(request):

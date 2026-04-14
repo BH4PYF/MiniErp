@@ -12,10 +12,19 @@ def subcontract_list_list(request):
     if not request.user.is_authenticated:
         return redirect('login')
     
+    # 获取搜索参数
+    q = request.GET.get('q', '')
+    
+    # 构建查询集
     subcontract_lists = SubcontractList.objects.all()
+    
+    # 应用搜索
+    if q:
+        subcontract_lists = subcontract_lists.filter(name__icontains=q)
+    
     # 获取所有分包清单分类
     categories = SubcontractCategory.objects.all().order_by('category_code')
-    return render(request, 'inventory/subcontract_list_list.html', {'subcontract_lists': subcontract_lists, 'categories': categories})
+    return render(request, 'inventory/subcontract_list_list.html', {'subcontract_lists': subcontract_lists, 'categories': categories, 'q': q})
 
 
 def subcontract_list_create(request):

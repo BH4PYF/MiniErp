@@ -101,7 +101,7 @@ def dashboard(request):
             # 获取项目的所有入库总额
             inbound_total = selected_project_material.inbound_records.aggregate(total=Sum('total_amount'))['total'] or 0
             # 获取项目的所有材料计划总额
-            from .material_plan import MaterialPlan
+            from ..models import MaterialPlan
             material_plan_total = selected_project_material.material_plans.aggregate(total=Sum('total_amount'))['total'] or 0
             material_variance = inbound_total - material_plan_total
             if material_plan_total > 0:

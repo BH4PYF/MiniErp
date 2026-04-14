@@ -78,17 +78,19 @@
     <form method="get" class="row g-2 align-items-end">
         <div class="col-auto"><input type="text" class="form-control form-control-sm" name="q" value="{{ q }}" placeholder="搜索名称/联系人"></div>
         <div class="col-auto">
-            <select class="form-select form-select-sm" name="main_type" style="min-width: 150px;">
+            <select class="form-select form-select-sm" name="main_type" id="filterMainType" style="min-width: 150px;">
                 <option value="">全部主营类型</option>
                 {% for cat in categories %}
                 <option value="{{ cat.id }}" {% if main_type == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
                 {% endfor %}
             </select>
         </div>
-        <div class="col-auto"><button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i> 查询</button></div>
+        <div class="col-auto"><button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i> 筛选</button></div>
+        <div class="col-auto"><a href="{% url 'supplier_list' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-x-circle"></i> 重置</a></div>
         <div class="col-auto ms-auto">
             <a href="{% url 'download_import_template' %}?type=supplier" class="btn btn-sm btn-outline-secondary"><i class="bi bi-file-earmark-arrow-down"></i> 导入模板</a>
             <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#importSupplierModal"><i class="bi bi-upload"></i> 批量导入</button>
+            <a href="{% url 'export_excel' %}?type=supplier" class="btn btn-sm btn-outline-success"><i class="bi bi-download"></i> 批量导出</a>
         </div>
     </form>
 </div>
@@ -405,5 +407,74 @@ function handleSupplierSaveSuccess(data) {
         location.reload();
     }, 1500);
 }
+
+function initSearchableSelect(selectId) {
+    var select = document.getElementById(selectId);
+    if (!select) return;
+    var wrapper = document.createElement('div');
+    wrapper.style.position = 'relative';
+    wrapper.style.display = 'inline-block';
+    select.parentNode.insertBefore(wrapper, select);
+    wrapper.appendChild(select);
+    select.style.display = 'none';
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'form-control form-control-sm';
+    input.placeholder = select.options[0].text;
+    input.style.width = '180px';
+    wrapper.appendChild(input);
+    var dropdown = document.createElement('div');
+    dropdown.className = 'dropdown-menu';
+    dropdown.style.cssText = 'position:absolute;top:100%;left:0;z-index:1000;max-height:200px;overflow-y:auto;width:100%;';
+    wrapper.appendChild(dropdown);
+    var currentVal = select.value;
+    if (currentVal) {
+        for (var i = 0; i < select.options.length; i++) {
+            if (select.options[i].value == currentVal) {
+                input.value = select.options[i].text;
+                break;
+            }
+        }
+    }
+    function renderOptions(filter) {
+        dropdown.innerHTML = '';
+        var f = (filter || '').toLowerCase();
+        for (var i = 0; i < select.options.length; i++) {
+            var opt = select.options[i];
+            if (!opt.value) continue;
+            if (f && opt.text.toLowerCase().indexOf(f) === -1) continue;
+            var item = document.createElement('a');
+            item.className = 'dropdown-item';
+            item.href = '#';
+            item.textContent = opt.text;
+            item.setAttribute('data-value', opt.value);
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                select.value = this.getAttribute('data-value');
+                input.value = this.textContent;
+                dropdown.classList.remove('show');
+            });
+            dropdown.appendChild(item);
+        }
+        if (dropdown.children.length === 0) {
+            var empty = document.createElement('span');
+            empty.className = 'dropdown-item text-muted';
+            empty.textContent = '无匹配项';
+            dropdown.appendChild(empty);
+        }
+        dropdown.classList.add('show');
+    }
+    input.addEventListener('focus', function() { renderOptions(this.value); });
+    input.addEventListener('input', function() { renderOptions(this.value); });
+    document.addEventListener('click', function(e) {
+        if (!wrapper.contains(e.target)) dropdown.classList.remove('show');
+    });
+}
+
+// 初始化搜索选择框
+var selects = document.querySelectorAll('select.form-select');
+selects.forEach(function(select) {
+    initSearchableSelect(select.id);
+});
 </script>
 {% endblock %}

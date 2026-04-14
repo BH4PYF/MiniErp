@@ -2,7 +2,7 @@ import os
 import multiprocessing
 
 # Gunicorn配置
-bind = "0.0.0.0:7777"
+bind = "0.0.0.0:6666"
 workers = multiprocessing.cpu_count() * 2 + 1
 worker_class = "sync"
 timeout = 30
