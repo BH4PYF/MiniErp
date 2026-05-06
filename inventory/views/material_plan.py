@@ -7,21 +7,14 @@ from inventory.models import MaterialPlan, MaterialPlanItem, Project, Material
 from django.core.paginator import Paginator
 import decimal
 
-from .utils import purchase_plan_required, role_required
+from .utils import purchase_plan_required, role_required, generate_no
 
 # 材料计划列表
 @purchase_plan_required
 def material_plan_list(request):
     # 生成新的计划编号（PLyyyymmdd000x格式）
-    today = timezone.localtime(timezone.now()).strftime('%Y%m%d')
-    # 考虑所有记录（包括已软删除的）
-    last_plan = MaterialPlan.objects.all().filter(plan_number__startswith=f'PL{today}').order_by('-plan_number').first()
-    if last_plan:
-        last_seq = int(last_plan.plan_number[-4:])
-        new_seq = last_seq + 1
-    else:
-        new_seq = 1
-    new_plan_number = f'PL{today}{str(new_seq).zfill(4)}'
+    with transaction.atomic():
+        new_plan_number = generate_no('PL', MaterialPlan, field_name='plan_number')
     
     # 获取筛选参数
     q = request.GET.get('q', '')
@@ -42,8 +35,8 @@ def material_plan_list(request):
     if end_date:
         plans = plans.filter(plan_date__lte=end_date)
     
-    # 排序和分页
-    plans = plans.order_by('-created_at')
+    # 排序和预加载
+    plans = plans.order_by('-created_at').prefetch_related('items__material')
     paginator = Paginator(plans, 10)
     page = request.GET.get('page')
     plans = paginator.get_page(page)
@@ -51,45 +44,13 @@ def material_plan_list(request):
     # 获取所有材料和项目
     materials = Material.objects.filter(is_deleted=False)
     projects = Project.objects.filter(is_deleted=False)
-    
-    # 计算每个材料计划的入库总额和整体进度
-    from inventory.models import InboundRecord
-    from django.db.models import Sum
-    for plan in plans:
-        total_plan_amount = 0
-        total_inbound_amount = 0
-        
-        for item in plan.items.all():
-            # 计算该项目该材料的入库总量
-            inbound_total = InboundRecord.objects.filter(
-                project=plan.project,
-                material=item.material,
-                is_deleted=False
-            ).aggregate(total=Sum('quantity'))['total'] or 0
-            item.inbound_total = inbound_total
-            
-            # 计算材料项的进度百分比
-            if item.quantity > 0:
-                item.progress = min(100, int((inbound_total / item.quantity) * 100))
-            else:
-                item.progress = 0
-            
-            # 累加计划总额和入库总额
-            total_plan_amount += item.amount
-            total_inbound_amount += inbound_total * item.unit_price
-        
-        # 设置材料计划的总金额和入库总额
-        plan.total_amount = total_plan_amount
-        plan.total_inbound_amount = total_inbound_amount
-        
-        # 计算整体进度
-        if total_plan_amount > 0:
-            plan.overall_progress = min(100, int((total_inbound_amount / total_plan_amount) * 100))
-        else:
-            plan.overall_progress = 0
-    
+
+    # 使用服务层方法获取带有进度信息的材料计划
+    from inventory.services.material_plan_service import MaterialPlanService
+    plans_with_progress = MaterialPlanService.get_plans_with_progress(plans)
+
     return render(request, 'inventory/material_plan_list.html', {
-        'plans': plans,
+        'plans': plans_with_progress,
         'new_plan_number': new_plan_number,
         'materials': materials,
         'projects': projects,
@@ -243,15 +204,8 @@ def material_plan_create(request):
     
     # GET请求，渲染创建页面
     # 生成新的计划编号（PLyyyymmdd000x格式）
-    today = timezone.localtime(timezone.now()).strftime('%Y%m%d')
-    # 考虑所有记录（包括已软删除的）
-    last_plan = MaterialPlan.objects.all().filter(plan_number__startswith=f'PL{today}').order_by('-plan_number').first()
-    if last_plan:
-        last_seq = int(last_plan.plan_number[-4:])
-        new_seq = last_seq + 1
-    else:
-        new_seq = 1
-    new_plan_number = f'PL{today}{str(new_seq).zfill(4)}'
+    with transaction.atomic():
+        new_plan_number = generate_no('PL', MaterialPlan, field_name='plan_number')
     
     materials = Material.objects.filter(is_deleted=False)
     projects = Project.objects.filter(is_deleted=False)
@@ -277,35 +231,11 @@ def material_plan_delete(request, id):
 def material_plan_detail(request, id):
     # 预加载材料计划项
     plan = get_object_or_404(MaterialPlan.objects.prefetch_related('items__material'), id=id, is_deleted=False)
-    
-    # 计算每个材料计划项的入库总量和进度
-    from inventory.models import InboundRecord
-    from django.db.models import Sum
-    
-    # 为计划项添加入库总量和进度属性
-    items_with_progress = []
-    for item in plan.items.all():
-        # 计算该项目该材料的入库总量
-        inbound_total = InboundRecord.objects.filter(
-            project=plan.project,
-            material=item.material,
-            is_deleted=False
-        ).aggregate(total=Sum('quantity'))['total'] or 0
-        
-        # 计算材料项的进度百分比
-        if item.quantity > 0:
-            progress = min(100, int((inbound_total / item.quantity) * 100))
-        else:
-            progress = 0
-        
-        # 将计算结果添加到item对象
-        item.inbound_total = inbound_total
-        item.progress = progress
-        items_with_progress.append(item)
-    
-    # 将处理后的items设置回plan对象
-    plan.items_list = items_with_progress
-    
+
+    # 使用服务层方法获取带有进度信息的材料计划
+    from inventory.services.material_plan_service import MaterialPlanService
+    plan = MaterialPlanService.get_plan_detail_with_progress(plan)
+
     return render(request, 'inventory/material_plan_detail.html', {'plan': plan})
 
 # 内联保存材料计划

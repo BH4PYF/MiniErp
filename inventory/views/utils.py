@@ -211,10 +211,11 @@ def save_with_generated_code(obj, prefix, model_class):
     return False
 
 
-def generate_no(prefix, model_class=None):
+def generate_no(prefix, model_class=None, field_name='no'):
     """生成唯一编号（使用 select_for_update 保证并发安全）
     prefix: 前缀 (如 'IN', 'PP')
     model_class: 查询的模型类，默认为 InboundRecord
+    field_name: 编号字段名，默认为 'no'
 
     注意：调用方必须在 transaction.atomic() 块内调用此函数，
     以确保 select_for_update 的锁覆盖到后续的 .save() 操作。
@@ -230,10 +231,11 @@ def generate_no(prefix, model_class=None):
     # select_for_update 锁由调用方的 atomic 块持有
     queryset = model_class.all_objects if hasattr(model_class, 'all_objects') else model_class.objects
     # 使用数据库 MAX + Substr/Cast 聚合，避免将所有记录加载到 Python
+    filter_kwargs = {f"{field_name}__startswith": full_prefix}
     max_num = queryset.select_for_update().filter(
-        no__startswith=full_prefix
+        **filter_kwargs
     ).annotate(
-        num_part=Cast(Substr('no', prefix_len + 1), IntegerField())
+        num_part=Cast(Substr(field_name, prefix_len + 1), IntegerField())
     ).aggregate(max_num=Max('num_part'))['max_num'] or 0
 
     next_num = max_num + 1
@@ -452,3 +454,38 @@ def make_excel_response(wb, filename):
     response['Content-Disposition'] = make_attachment_disposition(filename)
     wb.save(response)
     return response
+
+
+def prometheus_metrics(request):
+    """Prometheus监控端点"""
+    from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram, Summary, generate_latest
+    from django.db import connection
+    import time
+    
+    registry = CollectorRegistry()
+    
+    # 请求计数
+    REQUEST_COUNT = Counter('minierp_requests_total', 'Total requests', ['method', 'path'], registry=registry)
+    # 请求延迟
+    REQUEST_LATENCY = Histogram('minierp_request_duration_seconds', 'Request latency', ['method', 'path'], registry=registry)
+    # 数据库连接数
+    DB_CONNECTIONS = Gauge('minierp_db_connections', 'Database connections', registry=registry)
+    # 内存使用
+    MEMORY_USAGE = Gauge('minierp_memory_usage_bytes', 'Memory usage', registry=registry)
+    
+    # 记录请求
+    REQUEST_COUNT.labels(method=request.method, path=request.path).inc()
+    
+    # 记录数据库连接数
+    DB_CONNECTIONS.set(len(connection.queries))
+    
+    # 记录内存使用
+    import psutil
+    process = psutil.Process()
+    MEMORY_USAGE.set(process.memory_info().rss)
+    
+    # 生成指标
+    metrics = generate_latest(registry)
+    
+    from django.http import HttpResponse
+    return HttpResponse(metrics, content_type='text/plain')

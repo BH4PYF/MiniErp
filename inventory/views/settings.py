@@ -42,6 +42,26 @@ def settings_page(request):
     # 高级管理 Tab 中的系统信息（开销极小，保留）
     django_version = django.get_version()
     python_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+    
+    # 获取数据库类型
+    from django.conf import settings
+    db_engine = settings.DATABASES['default']['ENGINE']
+    if 'postgresql' in db_engine:
+        db_type = 'PostgreSQL'
+        db_version = '（生产环境）'
+    elif 'mysql' in db_engine:
+        db_type = 'MySQL'
+        db_version = '（生产环境）'
+    elif 'sqlite' in db_engine:
+        db_type = 'SQLite'
+        db_version = '（开发环境）'
+    else:
+        db_type = 'Unknown'
+        db_version = ''
+    
+    # 系统版本
+    system_version = 'V2.0.0'
+    system_build = '20260414'
 
     return render(request, 'inventory/settings.html', {
         'company_name': company_name,
@@ -49,6 +69,10 @@ def settings_page(request):
         'login_lockout_minutes': login_lockout_minutes,
         'django_version': django_version,
         'python_version': python_version,
+        'db_type': db_type,
+        'db_version': db_version,
+        'system_version': system_version,
+        'system_build': system_build,
     })
 
 

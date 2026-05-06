@@ -51,15 +51,17 @@ def dashboard(request):
         measurements_count = Measurement.objects.count()
         settlements_count = Settlement.objects.count()
         
-        # 材料总额计算
-        materials_total = 0
-        for material in Material.objects.all():
-            total_inbound = material.get_total_inbound()
-            if total_inbound > 0:
-                materials_total += total_inbound * material.standard_price
+        # 材料总额计算（优化：使用annotate和聚合查询）
+        from django.db.models import F, Sum
+        materials_total = Material.objects.filter(
+            inbound_records__isnull=False
+        ).annotate(
+            total_inbound=Sum('inbound_records__quantity')
+        ).aggregate(
+            total=Sum(F('total_inbound') * F('standard_price'))
+        )['total'] or 0
         
         # 结算总额计算
-        from django.db.models import Sum
         settlements_total = Settlement.objects.aggregate(total=Sum('final_amount'))['total'] or 0
         
         # 项目进度计算
@@ -77,19 +79,22 @@ def dashboard(request):
             if budget_total > 0:
                 project_progress = min(100, round((measurement_total / budget_total) * 100, 1))
         else:
-            total_budget = 0
-            total_measurement = 0
-            for project in Project.objects.filter(status__in=['active', 'pending']):
-                project_budget = project.budgets.aggregate(total=Sum('budget_items__total_amount'))['total'] or 0
-                project_measurement = 0
-                contracts = project.contracts.all()
-                for contract in contracts:
-                    contract_measurement = contract.measurements.aggregate(
-                        total=Sum('current_value')
-                    )['total'] or 0
-                    project_measurement += contract_measurement
-                total_budget += project_budget
-                total_measurement += project_measurement
+            # 优化：使用单次聚合查询计算总预算和总测量值
+            from django.db.models import Sum
+            # 计算总预算
+            total_budget = Project.objects.filter(
+                status__in=['active', 'pending']
+            ).aggregate(
+                total=Sum('budgets__budget_items__total_amount')
+            )['total'] or 0
+            
+            # 计算总测量值
+            total_measurement = Project.objects.filter(
+                status__in=['active', 'pending']
+            ).aggregate(
+                total=Sum('contracts__measurements__current_value')
+            )['total'] or 0
+            
             if total_budget > 0:
                 project_progress = min(100, round((total_measurement / total_budget) * 100, 1))
         
@@ -107,14 +112,22 @@ def dashboard(request):
             if material_plan_total > 0:
                 material_variance_percentage = (material_variance / material_plan_total) * 100
         else:
-            # 计算所有项目的材料节超
-            total_inbound = 0
-            total_material_plan = 0
-            for project in Project.objects.filter(status__in=['active', 'pending']):
-                project_inbound = project.inbound_records.aggregate(total=Sum('total_amount'))['total'] or 0
-                project_material_plan = project.material_plans.aggregate(total=Sum('total_amount'))['total'] or 0
-                total_inbound += project_inbound
-                total_material_plan += project_material_plan
+            # 优化：使用单次聚合查询计算总入库和总材料计划
+            from django.db.models import Sum
+            # 计算总入库
+            total_inbound = Project.objects.filter(
+                status__in=['active', 'pending']
+            ).aggregate(
+                total=Sum('inbound_records__total_amount')
+            )['total'] or 0
+            
+            # 计算总材料计划
+            total_material_plan = Project.objects.filter(
+                status__in=['active', 'pending']
+            ).aggregate(
+                total=Sum('material_plans__total_amount')
+            )['total'] or 0
+            
             material_variance = total_inbound - total_material_plan
             if total_material_plan > 0:
                 material_variance_percentage = (material_variance / total_material_plan) * 100

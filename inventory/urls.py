@@ -178,4 +178,6 @@ urlpatterns = [
     path('settlements/<int:pk>/export/', settlement.export_settlement_detail, name='export_settlement_detail'),
     path('api/measurements-by-contract/', settlement.get_measurements_by_contract, name='measurements_by_contract'),
     path('api/measurement-items/', settlement.get_measurement_items, name='measurement_items'),
+    # Prometheus监控端点
+    path('metrics/', views.utils.prometheus_metrics, name='prometheus_metrics'),
 ]

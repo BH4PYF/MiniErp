@@ -157,9 +157,9 @@
                     <h6 class="mb-0"><i class="bi bi-tags"></i> 材料分类管理</h6>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered">
-                            <thead class="table-light">
+                    <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light sticky-top">
                                 <tr>
                                     <th width="30%">分类编码</th>
                                     <th width="50%">分类名称</th>
@@ -182,9 +182,9 @@
                     <h6 class="mb-0"><i class="bi bi-list-check"></i> 清单分类管理</h6>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered">
-                            <thead class="table-light">
+                    <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light sticky-top">
                                 <tr>
                                     <th width="30%">清单编号</th>
                                     <th width="50%">清单名称</th>
@@ -218,26 +218,32 @@
     <!-- Tab 4: 高级管理 -->
     <div class="tab-pane fade" id="advanced" role="tabpanel">
         <div class="row g-3">
-            <div class="col-md-6">
-                <div class="card shadow-sm">
-                    <div class="card-body text-center">
-                        <i class="bi bi-speedometer2 display-4 text-primary"></i>
-                        <h6 class="mt-3">Django 管理后台</h6>
-                        <p class="text-muted small">完整的数据库模型管理、用户权限配置等</p>
-                        <a href="/admin/" class="btn btn-primary" target="_blank">
-                            <i class="bi bi-box-arrow-up-right"></i> 进入管理后台
-                        </a>
+            <div class="col-md-4 d-flex">
+                <div class="card shadow-sm w-100">
+                    <div class="card-body text-center d-flex flex-column justify-content-between">
+                        <div>
+                            <i class="bi bi-speedometer2 display-4 text-primary"></i>
+                            <h6 class="mt-3">Django 管理后台</h6>
+                            <p class="text-muted small">完整的数据库模型管理、用户权限配置等</p>
+                        </div>
+                        <div class="mt-3">
+                            <a href="/admin/" class="btn btn-primary" target="_blank">
+                                <i class="bi bi-box-arrow-up-right"></i> 进入管理后台
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <div class="col-md-6">
-                <div class="card shadow-sm">
-                    <div class="card-body text-center">
-                        <i class="bi bi-database-gear display-4 text-success"></i>
-                        <h6 class="mt-3">数据备份与恢复</h6>
-                        <p class="text-muted small">导出全部数据为 JSON 格式或从备份恢复</p>
-                        <div class="d-grid gap-2">
+            <div class="col-md-4 d-flex">
+                <div class="card shadow-sm w-100">
+                    <div class="card-body text-center d-flex flex-column justify-content-between">
+                        <div>
+                            <i class="bi bi-database-gear display-4 text-success"></i>
+                            <h6 class="mt-3">数据备份与恢复</h6>
+                            <p class="text-muted small">导出全部数据为 JSON 格式或从备份恢复</p>
+                        </div>
+                        <div class="d-grid gap-2 mt-3">
                             <form method="post" action="{% url 'backup_data' %}">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-success w-100">
@@ -255,29 +261,44 @@
                 </div>
             </div>
             
-            <div class="col-md-6">
-                <div class="card shadow-sm">
-                    <div class="card-body text-center">
-                        <i class="bi bi-trash3 display-4 text-danger"></i>
-                        <h6 class="mt-3">清空所有数据</h6>
-                        <p class="text-muted small">一键清空系统中的所有数据，仅保留用户信息</p>
-                        <button type="button" class="btn btn-danger btn-sm" onclick="showClearAllDataModal()">
-                            <i class="bi bi-trash"></i> 清空数据
-                        </button>
+            <div class="col-md-4 d-flex">
+                <div class="card shadow-sm w-100">
+                    <div class="card-body text-center d-flex flex-column justify-content-between">
+                        <div>
+                            <i class="bi bi-trash3 display-4 text-danger"></i>
+                            <h6 class="mt-3">清空所有数据</h6>
+                            <p class="text-muted small">一键清空系统中的所有数据，仅保留用户信息</p>
+                        </div>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-danger" onclick="showClearAllDataModal()">
+                                <i class="bi bi-trash"></i> 清空数据
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
             
             <div class="col-md-12">
                 <div class="card shadow-sm">
-                    <div class="card-header bg-light">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
                         <h6 class="mb-0"><i class="bi bi-info-circle"></i> 系统信息</h6>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="checkUpdate()">
+                            <i class="bi bi-arrow-repeat"></i> 检查更新
+                        </button>
                     </div>
                     <div class="card-body">
                         <table class="table table-bordered">
                             <tr>
+                                <th width="20%">系统版本</th>
+                                <td><strong class="text-primary">{{ system_version }}</strong> <small class="text-muted">（构建：{{ system_build }}）</small></td>
+                            </tr>
+                            <tr>
                                 <th width="20%">导航栏标题</th>
                                 <td>{{ company_name }}</td>
+                            </tr>
+                            <tr>
+                                <th width="20%">数据库类型</th>
+                                <td>{{ db_type }} <small class="text-muted">{{ db_version }}</small></td>
                             </tr>
                             <tr>
                                 <th>Django 版本</th>
@@ -286,10 +307,6 @@
                             <tr>
                                 <th>Python 版本</th>
                                 <td>{{ python_version }}</td>
-                            </tr>
-                            <tr>
-                                <th>数据库类型</th>
-                                <td>SQLite</td>
                             </tr>
                         </table>
                     </div>
@@ -438,6 +455,41 @@ function showAddCategoryModal(categoryType = 'material') {
 function showClearAllDataModal() {
     document.getElementById('clearAllDataForm').reset();
     new bootstrap.Modal(document.getElementById('clearAllDataModal')).show();
+}
+
+// 检查更新功能
+function checkUpdate() {
+    // 显示检查更新提示
+    const currentVersion = '{{ system_version }}';
+    const buildDate = '{{ system_build }}';
+    
+    // 创建提示信息
+    const alertHtml = `
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <h5><i class="bi bi-check-circle"></i> 当前已是最新版本</h5>
+            <p class="mb-1"><strong>系统版本：${currentVersion}</strong></p>
+            <p class="mb-1">构建时间：${buildDate}</p>
+            <hr>
+            <p class="mb-0 small text-muted">如需升级，请联系系统管理员或访问项目仓库获取最新版本。</p>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    // 在系统信息卡片中显示提示
+    const systemInfoCard = document.querySelector('#advanced .col-md-12:last-child .card-body');
+    const existingAlert = systemInfoCard.querySelector('.alert');
+    if (existingAlert) {
+        existingAlert.remove();
+    }
+    systemInfoCard.insertAdjacentHTML('afterbegin', alertHtml);
+    
+    // 3秒后自动关闭提示
+    setTimeout(() => {
+        const alert = systemInfoCard.querySelector('.alert');
+        if (alert) {
+            alert.remove();
+        }
+    }, 5000);
 }
 
 // 一键初始化材料分类

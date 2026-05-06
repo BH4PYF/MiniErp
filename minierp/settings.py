@@ -74,7 +74,7 @@ else:
         '::1',
     ]
     # 从环境变量读取额外的允许主机
-    additional_hosts = os.getenv('ALLOWED_HOSTS_EXTRA', '')
+    additional_hosts = os.getenv('ALLOWED_HOSTS', '')
     if additional_hosts:
         ALLOWED_HOSTS.extend([host.strip() for host in additional_hosts.split(',') if host.strip()])
 
