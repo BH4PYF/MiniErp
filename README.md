@@ -97,33 +97,40 @@ python manage.py runserver
 
 ## 部署到生产环境
 
-### Ubuntu 部署（推荐）
+部署使用 Gunicorn + Nginx + HTTPS 方案，通过一键脚本自动化完成 Nginx 配置、静态文件收集、数据库迁移和服务启动。
 
-#### Ubuntu 24.04（推荐）
+### 前置准备
+1. 准备 SSL 证书文件（`.crt` 和 `.key`）
+2. 配置 `.env` 文件（`DEBUG=False`，设置 `SECRET_KEY` 和 `ALLOWED_HOSTS`）
+
+### 启动生产环境
 ```bash
-sudo bash deploy/ubuntu/deploy_ubuntu_24.sh
+sudo bash deploy/start_production_https.sh
 ```
 
-#### Ubuntu 20.04/22.04
+脚本会自动完成 Nginx HTTPS 配置、静态文件收集、数据库迁移、Gunicorn 后台启动。
+
+### 停止/重启
 ```bash
-sudo bash deploy/ubuntu/deploy_ubuntu.sh
+sudo bash deploy/stop_production.sh           # 停止服务
+sudo bash deploy/start_production_https.sh    # 重新启动
 ```
 
-### CentOS 7 部署
-```bash
-cd deploy/centos7
-sudo bash deploy.sh
-```
-
-详细部署说明请参考各部署目录下的 README.md 文件。
+详细部署说明请参考 `deploy/DEPLOYMENT_HTTPS.md`。
 
 ## 项目结构
 
 ```
 MiniErp/
 ├── deploy/                     # 部署脚本目录
-│   ├── centos7/               # CentOS 7 部署脚本
-│   └── ubuntu/                # Ubuntu 部署脚本
+│   ├── start_production_https.sh   # 生产环境一键启动
+│   ├── start_production_test.sh    # 测试环境启动
+│   ├── stop_production.sh          # 停止生产服务
+│   ├── configure_nginx.sh          # Nginx 配置
+│   ├── minierp.conf                # Nginx 站点配置
+│   ├── minierp.service             # systemd 服务文件
+│   ├── gunicorn_config.py          # Gunicorn 配置
+│   └── DEPLOYMENT_HTTPS.md         # 部署详细文档
 ├── inventory/                  # 主应用
 │   ├── api/                   # API 接口
 │   ├── management/commands/   # 自定义管理命令

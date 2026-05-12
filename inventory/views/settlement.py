@@ -1,11 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.db import transaction, models
+from django.db import DatabaseError, IntegrityError, transaction, models
 from django.utils import timezone
 from decimal import Decimal
 from inventory.models import Settlement, SettlementItem, Contract, Project, Subcontractor, SubcontractList, Measurement
 from inventory.services.rate_limit_service import check_rate_limit
-from .utils import create_excel_workbook, set_column_widths, make_excel_response
+from .utils import create_excel_workbook, set_column_widths, make_excel_response, admin_management_required
 
 
 def settlement_list(request):
@@ -40,11 +40,9 @@ def settlement_list(request):
     return render(request, 'inventory/settlement_list.html', context)
 
 
+@admin_management_required
 def settlement_create(request):
     """创建分包结算"""
-    if not request.user.is_authenticated:
-        return redirect('login')
-    
     contracts = Contract.objects.all()
     
     if request.method == 'POST':
@@ -117,17 +115,15 @@ def settlement_create(request):
                 
             messages.success(request, '分包结算创建成功')
             return redirect('settlement_list')
-        except Exception as e:
-            messages.error(request, f'创建失败: {str(e)}')
+        except (IntegrityError, DatabaseError) as e:
+            messages.error(request, f'操作失败，请稍后重试')
     
     return render(request, 'inventory/settlement_create.html', {'contracts': contracts})
 
 
+@admin_management_required
 def settlement_edit(request, pk):
     """编辑分包结算"""
-    if not request.user.is_authenticated:
-        return redirect('login')
-    
     settlement = get_object_or_404(Settlement, pk=pk)
     contracts = Contract.objects.all()
     
@@ -192,8 +188,8 @@ def settlement_edit(request, pk):
                 
             messages.success(request, '分包结算更新成功')
             return redirect('settlement_list')
-        except Exception as e:
-            messages.error(request, f'更新失败: {str(e)}')
+        except (IntegrityError, DatabaseError) as e:
+            messages.error(request, f'操作失败，请稍后重试')
     
     subcontract_lists = SubcontractList.objects.all()
     return render(request, 'inventory/settlement_edit.html', {
@@ -203,19 +199,17 @@ def settlement_edit(request, pk):
     })
 
 
+@admin_management_required
 def settlement_delete(request, pk):
     """删除分包结算"""
-    if not request.user.is_authenticated:
-        return redirect('login')
-    
     settlement = get_object_or_404(Settlement, pk=pk)
     
     if request.method == 'POST':
         try:
             settlement.delete()
             messages.success(request, '分包结算删除成功')
-        except Exception as e:
-            messages.error(request, f'删除失败: {str(e)}')
+        except (IntegrityError, DatabaseError) as e:
+            messages.error(request, f'操作失败，请稍后重试')
         return redirect('settlement_list')
     
     # 如果是GET请求，直接重定向到列表页面

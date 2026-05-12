@@ -155,7 +155,7 @@ class InboundViewsTest(TestCase):
         cls.category = Category.objects.create(code='TEST', name='测试分类')
         cls.material = Material.objects.create(
             code='MAT001', name='测试材料', category=cls.category,
-            unit='个', standard_price=Decimal('10.00')
+            unit='个', spec='标准规格', standard_price=Decimal('10.00')
         )
         cls.project = Project.objects.create(code='PRJ001', name='测试项目')
         cls.supplier = Supplier.objects.create(code='SUP001', name='测试供应商')
@@ -223,7 +223,7 @@ class ReportViewsTest(TestCase):
         cls.category = Category.objects.create(code='TEST', name='测试分类')
         cls.material = Material.objects.create(
             code='MAT001', name='测试材料', category=cls.category,
-            unit='个', standard_price=Decimal('10.00')
+            unit='个', spec='标准规格', standard_price=Decimal('10.00')
         )
         cls.project = Project.objects.create(code='PRJ001', name='测试项目')
         cls.supplier = Supplier.objects.create(code='SUP001', name='测试供应商')
@@ -258,7 +258,7 @@ class PurchasePlanViewsTest(TestCase):
         cls.category = Category.objects.create(code='TEST', name='测试分类')
         cls.material = Material.objects.create(
             code='MAT001', name='测试材料', category=cls.category,
-            unit='个', standard_price=Decimal('10.00')
+            unit='个', spec='标准规格', standard_price=Decimal('10.00')
         )
         cls.project = Project.objects.create(code='PRJ001', name='测试项目')
         cls.supplier = Supplier.objects.create(code='SUP001', name='测试供应商')
@@ -309,7 +309,7 @@ class PurchasePlanViewsTest(TestCase):
         self.assertEqual(response.status_code, 200)
         result = response.json()
         self.assertTrue(result.get('success'))
-        self.assertTrue(PurchasePlan.objects.filter(spec='新规格').exists())
+        self.assertTrue(PurchasePlan.objects.filter(spec='标准规格').exists())
 
     def test_purchase_plan_save_update_pending(self):
         """测试编辑审批中的采购计划"""
@@ -330,7 +330,7 @@ class PurchasePlanViewsTest(TestCase):
         self.assertTrue(result.get('success'))
         self.plan_pending.refresh_from_db()
         self.assertEqual(self.plan_pending.quantity, Decimal('25'))
-        self.assertEqual(self.plan_pending.spec, '修改后的规格')
+        self.assertEqual(self.plan_pending.spec, '标准规格')
 
     def test_purchase_plan_save_update_purchasing(self):
         """测试编辑采购中的采购计划"""

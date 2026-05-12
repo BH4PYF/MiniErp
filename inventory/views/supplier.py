@@ -80,11 +80,11 @@ def supplier_save(request):
             if save_with_generated_code(obj, 'SUP', Supplier):
                 log_operation(request.user, '供应商档案', action, f'新增供应商 {obj.code} {obj.name}', obj.code)
                 # 自动为新供应商创建用户账号
-                user, err = create_user_for_supplier(obj)
+                user, err, pwd = create_user_for_supplier(obj)
                 if user:
                     log_operation(request.user, '用户管理', 'create',
                                   f'自动创建供应商用户 {user.username}（关联 {obj.code}）', obj.code)
-                    return JsonResponse({'success': True, 'message': f'保存成功，已自动创建用户 {user.username}（默认密码 12345678）'})
+                    return JsonResponse({'success': True, 'message': f'保存成功，已自动创建用户 {user.username}（密码 {pwd}）'})
             else:
                 return JsonResponse({'error': '系统繁忙，请稍后重试'}, status=500)
         return JsonResponse({'success': True, 'message': '保存成功'})

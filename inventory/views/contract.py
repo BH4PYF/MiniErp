@@ -1,20 +1,26 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.db import transaction
+from django.db import DatabaseError, IntegrityError, transaction
 from django.utils import timezone
 from decimal import Decimal
 from inventory.models import Contract, ContractItem, Project, Subcontractor, SubcontractList
 from inventory.services.rate_limit_service import check_rate_limit
-from .utils import create_excel_workbook, set_column_widths, make_excel_response
+from .utils import create_excel_workbook, set_column_widths, make_excel_response, admin_management_required
 
 
 def contract_list(request):
     """分包合同列表"""
     if not request.user.is_authenticated:
         return redirect('login')
-    
-    contracts = Contract.objects.all()
-    
+
+    if hasattr(request.user, 'profile') and request.user.profile.is_subcontractor:
+        contracts = Contract.objects.filter(
+            subcontractor__user_profiles__user=request.user,
+            is_deleted=False,
+        )
+    else:
+        contracts = Contract.objects.all()
+
     project_id = request.GET.get('project')
     subcontractor_id = request.GET.get('subcontractor')
     
@@ -36,11 +42,9 @@ def contract_list(request):
     return render(request, 'inventory/contract_list.html', context)
 
 
+@admin_management_required
 def contract_create(request):
     """创建分包合同"""
-    if not request.user.is_authenticated:
-        return redirect('login')
-    
     projects = Project.objects.all()
     subcontractors = Subcontractor.objects.all()
     
@@ -102,8 +106,8 @@ def contract_create(request):
                 
             messages.success(request, '分包合同创建成功')
             return redirect('contract_list')
-        except Exception as e:
-            messages.error(request, f'创建失败: {str(e)}')
+        except (IntegrityError, DatabaseError) as e:
+            messages.error(request, f'操作失败，请稍后重试')
     
     subcontract_lists = SubcontractList.objects.all()
     return render(request, 'inventory/contract_create.html', {
@@ -113,11 +117,9 @@ def contract_create(request):
     })
 
 
+@admin_management_required
 def contract_edit(request, pk):
     """编辑分包合同"""
-    if not request.user.is_authenticated:
-        return redirect('login')
-    
     contract = get_object_or_404(Contract, pk=pk)
     projects = Project.objects.all()
     subcontractors = Subcontractor.objects.all()
@@ -157,8 +159,8 @@ def contract_edit(request, pk):
                 
             messages.success(request, '分包合同更新成功')
             return redirect('contract_list')
-        except Exception as e:
-            messages.error(request, f'更新失败: {str(e)}')
+        except (IntegrityError, DatabaseError) as e:
+            messages.error(request, f'操作失败，请稍后重试')
     
     return render(request, 'inventory/contract_edit.html', {
         'contract': contract, 
@@ -168,11 +170,9 @@ def contract_edit(request, pk):
     })
 
 
+@admin_management_required
 def contract_delete(request, pk):
     """删除分包合同"""
-    if not request.user.is_authenticated:
-        return redirect('login')
-    
     contract = get_object_or_404(Contract, pk=pk)
     
     if request.method == 'POST':
@@ -184,8 +184,8 @@ def contract_delete(request, pk):
             else:
                 contract.delete()
                 messages.success(request, '分包合同删除成功')
-        except Exception as e:
-            messages.error(request, f'删除失败: {str(e)}')
+        except (IntegrityError, DatabaseError) as e:
+            messages.error(request, f'操作失败，请稍后重试')
         return redirect('contract_list')
     
     return redirect('contract_list')

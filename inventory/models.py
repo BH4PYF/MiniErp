@@ -75,7 +75,9 @@ class Profile(models.Model):
     ROLE_CHOICES = [
         ('admin', '管理员'),
         ('management', '管理层'),
+        ('material_dept', '物资部'),
         ('supplier', '供应商'),
+        ('clerk', '材料员'),
         ('subcontractor', '分包商'),
     ]
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
@@ -158,7 +160,7 @@ class Project(SoftDeleteModel):
     start_date = models.DateField('开工日期', null=True, blank=True)
     end_date = models.DateField('竣工日期', null=True, blank=True)
     budget = models.DecimalField('项目预算', max_digits=14, decimal_places=2, null=True, blank=True, default=0)
-    status = models.CharField('项目状态', max_length=20, choices=STATUS_CHOICES, default='active')
+    status = models.CharField('项目状态', max_length=20, choices=STATUS_CHOICES, default='active', db_index=True)
     remark = models.TextField('备注', blank=True)
     created_at = models.DateTimeField('创建时间', auto_now_add=True)
 
@@ -231,7 +233,7 @@ class SubcontractList(SoftDeleteModel):
     """分包清单"""
     code = models.CharField('清单编号', max_length=20, unique=True)
     name = models.CharField('清单名称', max_length=200)
-    category = models.CharField('分类', max_length=100)
+    category = models.ForeignKey('SubcontractCategory', on_delete=models.PROTECT, verbose_name='分类', related_name='subcontract_lists', null=True, blank=True)
     construction_params = models.CharField('施工参数', max_length=200)
     unit = models.CharField('计量单位', max_length=20)
     reference_price = models.DecimalField('参考单价', max_digits=12, decimal_places=2, default=0)
@@ -279,7 +281,7 @@ class Budget(SoftDeleteModel):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.code} - {self.project.name}"
+        return f"{self.code} - {getattr(self.project, 'name', '未知项目')}"
 
     def get_budget_total(self):
         """获取预算总额"""
@@ -290,17 +292,10 @@ class Budget(SoftDeleteModel):
     def get_actual_value(self):
         """获取实际产值 - 所有分包商进度计量本期产值总和"""
         from django.db.models import Sum
-        
-        total = Decimal('0')
-        
-        contracts = self.project.contracts.all()
-        
-        for contract in contracts:
-            contract_measurement = contract.measurements.aggregate(
-                total=Sum('current_value')
-            )['total'] or Decimal('0')
-            total += contract_measurement
-        
+        total = Measurement.objects.filter(
+            contract__project=self.project,
+            is_deleted=False,
+        ).aggregate(t=Sum('current_value'))['t'] or Decimal('0')
         return total
 
     def get_completion_progress(self):
@@ -346,6 +341,9 @@ class Contract(SoftDeleteModel):
         verbose_name = '分包合同'
         verbose_name_plural = verbose_name
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['project', 'subcontractor']),
+        ]
 
     def __str__(self):
         return f"{self.code} - {self.name}"
@@ -411,6 +409,10 @@ class Measurement(SoftDeleteModel):
         verbose_name = '进度计量'
         verbose_name_plural = verbose_name
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['contract', 'project']),
+            models.Index(fields=['period_end']),
+        ]
 
     def __str__(self):
         return f"{self.code} - {self.contract.name}"
@@ -471,6 +473,10 @@ class Settlement(SoftDeleteModel):
         verbose_name = '分包结算'
         verbose_name_plural = verbose_name
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['contract', 'project']),
+            models.Index(fields=['period_end']),
+        ]
 
     def __str__(self):
         return f"{self.code} - {self.contract.name}"
@@ -621,6 +627,7 @@ class InboundRecord(SoftDeleteModel):
     quality_status = models.CharField('质量状态', max_length=20, choices=QUALITY_CHOICES, default='qualified')
     # 快照字段：入库时记录规格，防止后续修改导致历史数据不一致
     spec = models.CharField('规格型号（快照）', max_length=100)
+    location = models.CharField('存放位置', max_length=100, blank=True)
     operator = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='操作员', related_name='inbound_ops')
     operate_time = models.DateTimeField('操作时间', auto_now_add=True)
     remark = models.TextField('备注', blank=True)
@@ -687,7 +694,11 @@ class PurchasePlan(SoftDeleteModel):
         ordering = ['-create_time']
 
     def __str__(self):
-        return f"{self.no} - {self.material.name}"
+        try:
+            material_name = self.material.name
+        except (AttributeError, TypeError):
+            material_name = '未知材料'
+        return f"{self.no} - {material_name}"
 
     def save(self, *args, **kwargs):
         # 使用预计单价计算预计金额
@@ -729,9 +740,16 @@ class Delivery(SoftDeleteModel):
         verbose_name = '发货单'
         verbose_name_plural = verbose_name
         ordering = ['-create_time']
+        indexes = [
+            models.Index(fields=['supplier', 'status']),
+        ]
 
     def __str__(self):
-        return f"{self.no} - {self.purchase_plan.material.name}"
+        try:
+            material_name = self.purchase_plan.material.name
+        except (AttributeError, TypeError):
+            material_name = '未知材料'
+        return f"{self.no} - {material_name}"
 
     def save(self, *args, **kwargs):
         self.actual_total_amount = self.actual_quantity * self.actual_unit_price
@@ -752,6 +770,9 @@ class OperationLog(models.Model):
         verbose_name = '操作日志'
         verbose_name_plural = verbose_name
         ordering = ['-time']
+        indexes = [
+            models.Index(fields=['operator']),
+        ]
 
     def __str__(self):
         return f"{self.time} - {self.operator} - {self.details}"
@@ -804,12 +825,15 @@ class MaterialPlan(SoftDeleteModel):
     updated_at = models.DateTimeField('更新时间', auto_now=True)
     
     def __str__(self):
-        return f"{self.plan_number} - {self.project.name}"
+        return f"{self.plan_number} - {getattr(self.project, 'name', '未知项目')}"
     
     class Meta:
         verbose_name = '材料计划'
         verbose_name_plural = '材料计划管理'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['project', 'plan_date']),
+        ]
 
 class MaterialPlanItem(models.Model):
     """材料计划明细模型"""
@@ -829,8 +853,11 @@ class MaterialPlanItem(models.Model):
         self.material_plan.save()
     
     def __str__(self):
-        return f"{self.material.name} - {self.quantity} {self.unit}"
+        return f"{getattr(self.material, 'name', '未知材料')} - {self.quantity} {self.unit}"
     
     class Meta:
         verbose_name = '材料计划明细'
         verbose_name_plural = '材料计划明细管理'
+        indexes = [
+            models.Index(fields=['material']),
+        ]

@@ -1,412 +1,779 @@
 {% extends "base.html" %}
-{% block title %}{{ company_name|default:"系统首页" }}{% endblock %}
-{% block page_title %}{{ company_name|default:"系统首页" }}{% endblock %}
+{% block title %}仪表盘 - {{ company_name|default:"项目管理系统" }}{% endblock %}
+{% block page_title %}仪表盘{% endblock %}
 {% block extra_css %}
 <style>
-/* 基础样式 */
-body { font-size: 16px; }
+/* ========== 仪表盘整体布局 ========== */
+.dashboard-wrapper {
+    background: #f0f2f5;
+    min-height: 100vh;
+    padding: 1.5rem 0;
+}
 
-/* 卡片容器 */
 .dashboard-container {
-    animation: fadeIn 0.6s ease-in-out;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    animation: fadeInUp 0.5s ease-out;
 }
 
-/* 卡片样式 */
-.dashboard-card {
+/* ========== 统计卡片行 ========== */
+.stat-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+/* ========== 单个统计卡片 ========== */
+.stat-card {
+    background: #fff;
     border: none;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-    overflow: hidden;
-}
-
-.dashboard-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
-}
-
-/* 卡片头部 */
-.card-header {
-    border-radius: 12px 12px 0 0;
-    padding: 1rem;
-    position: relative;
-    overflow: hidden;
-}
-
-.card-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s ease;
-}
-
-.card-header:hover::before {
-    left: 100%;
-}
-
-.card-header h6 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin: 0;
-    position: relative;
-    z-index: 1;
-}
-
-/* 卡片内容 */
-.card-body {
-    min-height: 180px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    border-radius: 16px;
     padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    transition: all 0.25s ease;
+    cursor: pointer;
     position: relative;
-}
-
-/* 卡片图标 */
-.card-icon {
-    font-size: 3rem;
-    margin-bottom: 15px;
-    transition: transform 0.3s ease;
-    opacity: 0.9;
-}
-
-.dashboard-card:hover .card-icon {
-    transform: scale(1.1);
-}
-
-/* 卡片数值 */
-.card-value {
-    font-size: 2.2rem;
-    font-weight: bold;
-    margin-bottom: 8px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    animation: countUp 2s ease-out;
-}
-
-/* 卡片标签 */
-.card-label {
-    font-size: 1rem;
-    color: #6c757d;
-    text-align: center;
-}
-
-/* 进度条样式 */
-.progress {
-    height: 24px;
-    margin-top: 12px;
-    width: 100%;
-    border-radius: 12px;
     overflow: hidden;
-    background: rgba(0, 0, 0, 0.05);
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.stat-card:active {
+    transform: translateY(-1px);
+}
+
+.stat-card .icon-wrap {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.stat-card .info {
+    flex: 1;
+    min-width: 0;
+}
+
+.stat-card .info .label {
+    font-size: 0.8rem;
+    color: #8c8e91;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    margin-bottom: 0.25rem;
+}
+
+.stat-card .info .value {
+    font-size: 1.65rem;
+    font-weight: 700;
+    color: #1a1d23;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+    font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+.stat-card .info .sub {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-top: 0.15rem;
+}
+
+/* 统计卡片色彩主题 */
+.stat-card.accent-blue .icon-wrap   { background: #eff6ff; color: #3b82f6; }
+.stat-card.accent-indigo .icon-wrap { background: #eef2ff; color: #6366f1; }
+.stat-card.accent-cyan .icon-wrap   { background: #ecfeff; color: #06b6d4; }
+.stat-card.accent-emerald .icon-wrap{ background: #ecfdf5; color: #10b981; }
+.stat-card.accent-amber .icon-wrap  { background: #fffbeb; color: #f59e0b; }
+.stat-card.accent-rose .icon-wrap   { background: #fff1f2; color: #f43f5e; }
+.stat-card.accent-violet .icon-wrap { background: #f5f3ff; color: #8b5cf6; }
+.stat-card.accent-teal .icon-wrap   { background: #f0fdfa; color: #14b8a6; }
+
+.stat-card.accent-blue:hover   { border-left: 3px solid #3b82f6; }
+.stat-card.accent-indigo:hover { border-left: 3px solid #6366f1; }
+.stat-card.accent-cyan:hover   { border-left: 3px solid #06b6d4; }
+.stat-card.accent-emerald:hover{ border-left: 3px solid #10b981; }
+.stat-card.accent-amber:hover  { border-left: 3px solid #f59e0b; }
+.stat-card.accent-rose:hover   { border-left: 3px solid #f43f5e; }
+.stat-card.accent-violet:hover { border-left: 3px solid #8b5cf6; }
+.stat-card.accent-teal:hover   { border-left: 3px solid #14b8a6; }
+
+/* ========== 内容双栏布局 ========== */
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+/* ========== 面板卡片 ========== */
+.panel {
+    background: #fff;
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    overflow: hidden;
+}
+
+.panel-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.panel-header .panel-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1a1d23;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.panel-header .panel-title i {
+    font-size: 1.1rem;
+}
+
+.panel-body {
+    padding: 1.5rem;
+}
+
+/* ========== 进度条 ========== */
+.progress-wrap {
+    margin-bottom: 1rem;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.6rem;
+}
+
+.progress-info .proj-name {
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.9rem;
+}
+
+.progress-info .proj-pct {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #3b82f6;
+}
+
+.progress {
+    height: 10px;
+    border-radius: 5px;
+    background: #f3f4f6;
+    overflow: hidden;
 }
 
 .progress-bar {
-    font-weight: 600;
-    font-size: 0.875rem;
-    border-radius: 12px;
-    transition: width 1.5s ease-out;
+    border-radius: 5px;
+    background: linear-gradient(90deg, #3b82f6, #6366f1);
+    transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
-    overflow: hidden;
 }
 
 .progress-bar::after {
     content: '';
     position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
     animation: shimmer 2s infinite;
 }
 
-/* 状态标签 */
-.saving {
-    color: #28a745;
-    font-weight: bold;
-    animation: pulse 2s infinite;
+/* 超额红色进度条 */
+.progress-bar.over-budget {
+    background: linear-gradient(90deg, #ef4444, #f97316);
 }
 
-.exceeding {
-    color: #dc3545;
-    font-weight: bold;
-    animation: pulse 2s infinite;
+/* 节约绿色进度条 */
+.progress-bar.under-budget {
+    background: linear-gradient(90deg, #10b981, #34d399);
 }
 
-/* 表单样式 */
-.form-control.form-control-sm {
-    border-radius: 8px;
-    border: 1px solid #ced4da;
-    transition: all 0.3s ease;
+/* ========== 材料节超显示 ========== */
+.variance-display {
+    text-align: center;
+    padding: 0.5rem 0;
 }
 
-.form-control.form-control-sm:focus {
-    border-color: #80bdff;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+.variance-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
 }
 
-/* 按钮样式 */
-.btn {
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    font-weight: 500;
+.variance-value.saving { color: #10b981; }
+.variance-value.overspent { color: #ef4444; }
+
+.variance-label {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
 }
 
-.btn:hover {
+/* ========== 表单控件 ========== */
+.form-select-sm {
+    border-radius: 10px;
+    border: 1.5px solid #e5e7eb;
+    font-size: 0.85rem;
+    padding: 0.5rem 0.75rem;
+    background-color: #f9fafb;
+    transition: all 0.2s;
+    min-width: 160px;
+}
+
+.form-select-sm:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+    background-color: #fff;
+}
+
+.btn-filter {
+    border-radius: 10px;
+    padding: 0.45rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: none;
+    transition: all 0.2s;
+}
+
+.btn-filter-primary {
+    background: #3b82f6;
+    color: #fff;
+}
+
+.btn-filter-primary:hover {
+    background: #2563eb;
+}
+
+.btn-filter-success {
+    background: #10b981;
+    color: #fff;
+}
+
+.btn-filter-success:hover {
+    background: #059669;
+}
+
+/* ========== 今日入库表格 ========== */
+.recent-table {
+    width: 100%;
+    font-size: 0.85rem;
+}
+
+.recent-table th {
+    color: #9ca3af;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.65rem 0.75rem;
+    border-bottom: 1px solid #f3f4f6;
+    white-space: nowrap;
+}
+
+.recent-table td {
+    padding: 0.65rem 0.75rem;
+    color: #374151;
+    border-bottom: 1px solid #f9fafb;
+    white-space: nowrap;
+}
+
+.recent-table tbody tr:hover {
+    background: #f9fafb;
+}
+
+.recent-table .text-success { color: #10b981; font-weight: 600; }
+.recent-table .text-danger  { color: #ef4444; font-weight: 600; }
+
+.empty-state {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #9ca3af;
+}
+
+.empty-state i {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+    display: block;
+}
+
+.empty-state p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* ========== 快捷操作 ========== */
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.quick-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    background: #fff;
+    border: 1.5px solid #e5e7eb;
+    color: #374151;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.quick-action-btn:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+    background: #eff6ff;
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(59,130,246,0.15);
 }
 
-/* 动画效果 */
-@keyframes fadeIn {
+.quick-action-btn i {
+    font-size: 1.1rem;
+}
+
+/* ========== 动画 ========== */
+@keyframes fadeInUp {
     from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes countUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes shimmer {
-    0% { left: -100%; }
-    100% { left: 100%; }
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
 }
 
 @keyframes pulse {
     0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+    50%      { opacity: 0.5; }
 }
 
-/* 卡片颜色方案 */
-.card-primary {
-    background: linear-gradient(135deg, #007bff, #0056b3);
+/* ========== 响应式 ========== */
+@media (max-width: 1200px) {
+    .stat-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
-.card-success {
-    background: linear-gradient(135deg, #28a745, #1e7e34);
-}
-
-.card-info {
-    background: linear-gradient(135deg, #17a2b8, #138496);
-}
-
-.card-warning {
-    background: linear-gradient(135deg, #ffc107, #d39e00);
-}
-
-/* 移动端响应式优化 */
 @media (max-width: 768px) {
-    .card-body {
-        min-height: 140px;
+    .stat-row,
+    .content-grid,
+    .quick-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-container {
+        padding: 0 1rem;
+    }
+
+    .stat-card {
         padding: 1.25rem;
     }
-    
-    .card-icon {
-        font-size: 2.5rem;
-        margin-bottom: 10px;
+
+    .stat-card .info .value {
+        font-size: 1.4rem;
     }
-    
-    .card-value {
-        font-size: 1.8rem;
-        margin-bottom: 6px;
+
+    .panel-header {
+        flex-direction: column;
+        align-items: flex-start;
     }
-    
-    .card-label {
-        font-size: 0.9rem;
+
+    .variance-value {
+        font-size: 2rem;
     }
-    
-    .card-header h6 {
-        font-size: 1rem;
-    }
-    
-    .progress {
-        height: 20px;
-        margin-top: 10px;
-    }
-    
-    .progress-bar {
-        font-size: 0.75rem;
-    }
-    
-    .form-control.form-control-sm {
-        font-size: 14px;
-    }
-    
-    .btn.btn-sm {
-        font-size: 0.75rem;
-        padding: 0.25rem 0.5rem;
-    }
-    
-    .row {
-        gap: 1rem;
+
+    .recent-table {
+        font-size: 0.8rem;
     }
 }
 
-/* 小屏幕优化 */
-@media (max-width: 576px) {
-    .card-body {
-        min-height: 120px;
+@media (max-width: 480px) {
+    .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stat-card {
         padding: 1rem;
+        gap: 0.75rem;
     }
-    
-    .card-icon {
-        font-size: 2rem;
-        margin-bottom: 8px;
+
+    .stat-card .icon-wrap {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        font-size: 1.25rem;
     }
-    
-    .card-value {
-        font-size: 1.5rem;
-        margin-bottom: 4px;
-    }
-    
-    .card-label {
-        font-size: 0.85rem;
+
+    .stat-card .info .value {
+        font-size: 1.25rem;
     }
 }
 </style>
 {% endblock %}
 {% block content %}
-<div class="dashboard-container">
-    <div class="row g-4 mb-4">
-        <!-- 项目数量 -->
-        <div class="col-lg-3 col-md-6 col-sm-12">
-            <div class="card dashboard-card shadow-lg">
-                <div class="card-header card-primary text-white">
-                    <h6 class="mb-0"><i class="bi bi-folder me-2"></i> 项目数量</h6>
-                </div>
-                <div class="card-body">
-                    <div class="card-icon text-primary"><i class="bi bi-building"></i></div>
-                    <div class="card-value text-primary">{{ stats.projects_count }}</div>
-                    <div class="card-label">个项目</div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 合同数量 -->
-        <div class="col-lg-3 col-md-6 col-sm-12">
-            <div class="card dashboard-card shadow-lg">
-                <div class="card-header card-success text-white">
-                    <h6 class="mb-0"><i class="bi bi-file-text me-2"></i> 合同数量</h6>
-                </div>
-                <div class="card-body">
-                    <div class="card-icon text-success"><i class="bi bi-file-earmark-text"></i></div>
-                    <div class="card-value text-success">{{ stats.contracts_count }}</div>
-                    <div class="card-label">份合同</div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 材料总额 -->
-        <div class="col-lg-3 col-md-6 col-sm-12">
-            <div class="card dashboard-card shadow-lg">
-                <div class="card-header card-info text-white">
-                    <h6 class="mb-0"><i class="bi bi-box-seam me-2"></i> 材料总额</h6>
-                </div>
-                <div class="card-body">
-                    <div class="card-icon text-info"><i class="bi bi-box"></i></div>
-                    <div class="card-value text-info">¥{{ stats.materials_total|floatformat:2 }}</div>
-                    <div class="card-label">元</div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 结算总额 -->
-        <div class="col-lg-3 col-md-6 col-sm-12">
-            <div class="card dashboard-card shadow-lg">
-                <div class="card-header card-warning text-white">
-                    <h6 class="mb-0"><i class="bi bi-calculator me-2"></i> 结算总额</h6>
-                </div>
-                <div class="card-body">
-                    <div class="card-icon text-warning"><i class="bi bi-cash"></i></div>
-                    <div class="card-value text-warning">¥{{ stats.settlements_total|floatformat:2 }}</div>
-                    <div class="card-label">元</div>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="dashboard-wrapper">
+    <div class="dashboard-container">
 
-    <div class="row g-4">
-        <!-- 项目进度 -->
-        <div class="col-lg-6 col-md-12 col-sm-12">
-            <div class="card dashboard-card shadow-lg">
-                <div class="card-header card-primary text-white">
-                    <h6 class="mb-0"><i class="bi bi-progress me-2"></i> 项目进度</h6>
+{% if is_subcontractor %}
+
+        <!-- ============ 分包商仪表盘 ============ -->
+
+        <!-- 快捷操作 -->
+        <div class="quick-actions">
+            <a href="{% url 'measurement_create' %}" class="quick-action-btn">
+                <i class="bi bi-rulers"></i> 报量登记
+            </a>
+            <a href="{% url 'contract_list' %}" class="quick-action-btn">
+                <i class="bi bi-file-text"></i> 我的合同
+            </a>
+            <a href="{% url 'settlement_list' %}" class="quick-action-btn">
+                <i class="bi bi-calculator"></i> 我的结算
+            </a>
+        </div>
+
+        <!-- 统计卡片 -->
+        <div class="stat-row">
+            <div class="stat-card accent-blue">
+                <div class="icon-wrap"><i class="bi bi-file-text"></i></div>
+                <div class="info">
+                    <div class="label">我的合同</div>
+                    <div class="value">{{ stats.contracts_count }}</div>
                 </div>
-                <div class="card-body">
-                    <div class="w-100 mb-4">
-                        <form method="get" action="{% url 'dashboard' %}" class="d-flex flex-wrap align-items-center gap-2">
-                            <select class="form-control form-control-sm flex-grow-1" id="project_progress" name="project_progress" placeholder="选择项目">
-                                <option value="">全部项目</option>
-                                {% for project in projects %}
-                                <option value="{{ project.id }}" {% if selected_project_progress_id == project.id|stringformat:"s" %}selected{% endif %}>{{ project.name }}</option>
-                                {% endfor %}
-                            </select>
-                            <button type="submit" class="btn btn-sm btn-primary">筛选</button>
-                        </form>
+            </div>
+            <div class="stat-card accent-indigo">
+                <div class="icon-wrap"><i class="bi bi-rulers"></i></div>
+                <div class="info">
+                    <div class="label">进度计量</div>
+                    <div class="value">{{ stats.measurements_count }}</div>
+                </div>
+            </div>
+            <div class="stat-card accent-amber">
+                <div class="icon-wrap"><i class="bi bi-calculator"></i></div>
+                <div class="info">
+                    <div class="label">分包结算</div>
+                    <div class="value">{{ stats.settlements_count }}</div>
+                </div>
+            </div>
+            <div class="stat-card accent-emerald">
+                <div class="icon-wrap"><i class="bi bi-cash-stack"></i></div>
+                <div class="info">
+                    <div class="label">总结算额</div>
+                    <div class="value">¥{{ stats.settlements_total|floatformat:0 }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 合同列表 -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="bi bi-file-text" style="color:#3b82f6;"></i> 合同进度
+                </div>
+            </div>
+            <div class="panel-body p-0">
+                {% if contract_data %}
+                <div style="overflow-x:auto;">
+                    <table class="recent-table">
+                        <thead>
+                            <tr>
+                                <th>项目名称</th>
+                                <th>合同编号</th>
+                                <th>合同总额</th>
+                                <th>累计产值</th>
+                                <th>进度</th>
+                                <th>状态</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in contract_data %}
+                            <tr>
+                                <td>{{ c.project_name }}</td>
+                                <td style="font-weight:600; color:#3b82f6;">{{ c.code }}</td>
+                                <td>¥{{ c.contract_total|floatformat:0 }}</td>
+                                <td>¥{{ c.measured_cumulative|floatformat:0 }}</td>
+                                <td>
+                                    <div class="progress" style="height:6px; margin:0; min-width:60px;">
+                                        <div class="progress-bar" style="width:{{ c.progress }}%;"></div>
+                                    </div>
+                                    <small>{{ c.progress|floatformat:1 }}%</small>
+                                </td>
+                                <td>
+                                    {% if c.progress >= 100 %}
+                                    <span class="badge bg-success">已完成</span>
+                                    {% elif c.progress > 0 %}
+                                    <span class="badge bg-primary">进行中</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">未开始</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-inbox"></i>
+                    <p>暂无合同数据</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+{% else %}
+
+        <!-- ============ 管理员/物资部仪表盘 ============ -->
+
+        <!-- 快捷操作 -->
+        <div class="quick-actions">
+            <a href="{% url 'inbound_list' %}" class="quick-action-btn">
+                <i class="bi bi-box-arrow-in-down"></i> 入库登记
+            </a>
+            <a href="{% url 'purchase_plan_list' %}" class="quick-action-btn">
+                <i class="bi bi-cart-plus"></i> 采购申请
+            </a>
+            <a href="{% url 'report_page' %}" class="quick-action-btn">
+                <i class="bi bi-file-earmark-bar-graph"></i> 统计报表
+            </a>
+            <a href="{% url 'chart_page' %}" class="quick-action-btn">
+                <i class="bi bi-graph-up"></i> 图表分析
+            </a>
+        </div>
+
+        <!-- 核心统计卡片 -->
+        <div class="stat-row">
+            <div class="stat-card accent-blue">
+                <div class="icon-wrap"><i class="bi bi-building"></i></div>
+                <div class="info">
+                    <div class="label">项目总数</div>
+                    <div class="value">{{ stats.projects_count }}</div>
+                    <div class="sub">进行中 {{ stats.active_projects_count }}</div>
+                </div>
+            </div>
+            <div class="stat-card accent-indigo">
+                <div class="icon-wrap"><i class="bi bi-file-text"></i></div>
+                <div class="info">
+                    <div class="label">合同总数</div>
+                    <div class="value">{{ stats.contracts_count }}</div>
+                    <div class="sub">计量 {{ stats.measurements_count }} · 结算 {{ stats.settlements_count }}</div>
+                </div>
+            </div>
+            <div class="stat-card accent-cyan">
+                <div class="icon-wrap"><i class="bi bi-box-seam"></i></div>
+                <div class="info">
+                    <div class="label">材料总值</div>
+                    <div class="value">¥{{ stats.materials_total|floatformat:0 }}</div>
+                    <div class="sub">材料 {{ stats.materials_count }} · 供应商 {{ stats.suppliers_count }}</div>
+                </div>
+            </div>
+            <div class="stat-card accent-emerald">
+                <div class="icon-wrap"><i class="bi bi-cash-stack"></i></div>
+                <div class="info">
+                    <div class="label">结算总额</div>
+                    <div class="value">¥{{ stats.settlements_total|floatformat:0 }}</div>
+                    <div class="sub">今日入库 {{ stats.today_inbound_count }} 笔</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 进度 & 节超 双栏 -->
+        <div class="content-grid">
+            <!-- 项目进度 -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="bi bi-graph-up-arrow" style="color:#3b82f6;"></i> 项目进度
                     </div>
-                    <div class="w-100">
-                        <div class="d-flex justify-content-between mb-3">
-                            <span class="font-weight-medium">当前项目：{{ selected_project_progress.name|default:"全部项目" }}</span>
-                            <span class="font-weight-bold text-primary">{{ stats.project_progress|floatformat:1 }}%</span>
+                    <form method="get" action="{% url 'dashboard' %}" class="d-flex gap-2">
+                        <select class="form-select-sm" name="project_progress" onchange="this.form.submit()">
+                            <option value="">全部项目</option>
+                            {% for project in projects %}
+                            <option value="{{ project.id }}" {% if selected_project_progress_id == project.id|stringformat:"s" %}selected{% endif %}>{{ project.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </div>
+                <div class="panel-body">
+                    <div class="progress-wrap">
+                        <div class="progress-info">
+                            <span class="proj-name">{{ selected_project_progress.name|default:"全部项目" }}</span>
+                            <span class="proj-pct">{{ stats.project_progress|floatformat:1 }}%</span>
                         </div>
                         <div class="progress">
-                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ stats.project_progress|floatformat:1 }}%" aria-valuenow="{{ stats.project_progress|floatformat:1 }}" aria-valuemin="0" aria-valuemax="100">
-                                {{ stats.project_progress|floatformat:1 }}%
-                            </div>
+                            <div class="progress-bar" style="width: {{ stats.project_progress|floatformat:1 }}%;"></div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- 材料节超 -->
-        <div class="col-lg-6 col-md-12 col-sm-12">
-            <div class="card dashboard-card shadow-lg">
-                <div class="card-header card-success text-white">
-                    <h6 class="mb-0"><i class="bi bi-balance-scale me-2"></i> 材料节超</h6>
-                </div>
-                <div class="card-body">
-                    <div class="w-100 mb-4">
-                        <form method="get" action="{% url 'dashboard' %}" class="d-flex flex-wrap align-items-center gap-2">
-                            <select class="form-control form-control-sm flex-grow-1" id="project_material" name="project_material" placeholder="选择项目">
-                                <option value="">全部项目</option>
-                                {% for project in projects %}
-                                <option value="{{ project.id }}" {% if selected_project_material_id == project.id|stringformat:"s" %}selected{% endif %}>{{ project.name }}</option>
-                                {% endfor %}
-                            </select>
-                            <button type="submit" class="btn btn-sm btn-success">筛选</button>
-                        </form>
+
+            <!-- 材料节超 -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="bi bi-cash-coin" style="color:#10b981;"></i> 材料节超
                     </div>
-                    <div class="w-100">
-                        <div class="d-flex justify-content-between mb-3">
-                            <span class="font-weight-medium">当前项目：{{ selected_project_material.name|default:"全部项目" }}</span>
-                            {% if stats.material_variance < 0 %}
-                            <span class="saving">节约 ¥{{ stats.material_variance|floatformat:2|slice:"1:" }}</span>
-                            {% else %}
-                            <span class="exceeding">超额 ¥{{ stats.material_variance|floatformat:2 }}</span>
-                            {% endif %}
+                    <form method="get" action="{% url 'dashboard' %}" class="d-flex gap-2">
+                        <select class="form-select-sm" name="project_material" onchange="this.form.submit()">
+                            <option value="">全部项目</option>
+                            {% for project in projects %}
+                            <option value="{{ project.id }}" {% if selected_project_material_id == project.id|stringformat:"s" %}selected{% endif %}>{{ project.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </div>
+                <div class="panel-body">
+                    <div class="progress-wrap">
+                        {% if stats.material_variance < 0 %}
+                        <div class="progress-info">
+                            <span class="proj-name">材料预算执行</span>
+                            <span class="proj-pct" style="color:#10b981;">节约 {{ stats.material_variance_percentage|floatformat:1|slice:"1:" }}%</span>
                         </div>
                         <div class="progress">
-                            {% if stats.material_variance < 0 %}
-                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ stats.material_variance_percentage|floatformat:0|slice:"1:" }}%" aria-valuenow="{{ stats.material_variance_percentage|floatformat:0|slice:"1:" }}" aria-valuemin="0" aria-valuemax="100">
-                                节约 {{ stats.material_variance_percentage|floatformat:1|slice:"1:" }}%
-                            </div>
-                            {% else %}
-                            <div class="progress-bar bg-danger" role="progressbar" style="width: {{ stats.material_variance_percentage|floatformat:0 }}%" aria-valuenow="{{ stats.material_variance_percentage|floatformat:0 }}" aria-valuemin="0" aria-valuemax="100">
-                                超额 {{ stats.material_variance_percentage|floatformat:1 }}%
-                            </div>
-                            {% endif %}
+                            <div class="progress-bar under-budget" style="width: {{ stats.material_variance_percentage|floatformat:0|slice:'1:' }}%;"></div>
                         </div>
+                        {% else %}
+                        <div class="progress-info">
+                            <span class="proj-name">材料预算执行</span>
+                            <span class="proj-pct" style="color:#ef4444;">超额 {{ stats.material_variance_percentage|floatformat:1 }}%</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar over-budget" style="width: {{ stats.material_variance_percentage|floatformat:0 }}%;"></div>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- 待处理事项 -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="bi bi-exclamation-triangle-fill" style="color:#f59e0b;"></i>
+                    待处理事项
+                </div>
+                <span style="font-size:0.8rem; color:#9ca3af;">审批 & 发货</span>
+            </div>
+            <div class="panel-body p-0">
+
+                <!-- 待审批采购计划 -->
+                <div style="padding:0 1rem 0.5rem;">
+                    <div style="font-weight:600; font-size:0.85rem; color:#374151; margin-bottom:0.5rem;">
+                        <i class="bi bi-file-text" style="color:#3b82f6;"></i> 待审批采购计划
+                        {% if pending_plans %}<span style="font-weight:400; color:#9ca3af;">({{ pending_plans|length }})</span>{% endif %}
+                    </div>
+                    {% if pending_plans %}
+                    <div style="overflow-x:auto;">
+                        <table class="recent-table">
+                            <thead>
+                                <tr>
+                                    <th>计划编号</th>
+                                    <th>项目</th>
+                                    <th>材料</th>
+                                    <th>数量</th>
+                                    <th>金额</th>
+                                    <th>供应商</th>
+                                    <th>状态</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in pending_plans %}
+                                <tr>
+                                    <td style="font-weight:600; color:#3b82f6;">{{ p.no }}</td>
+                                    <td>{{ p.project.name|default:"-" }}</td>
+                                    <td>{{ p.material.name|default:"-" }}</td>
+                                    <td>{{ p.quantity }}</td>
+                                    <td style="font-weight:600;">¥{{ p.total_amount|floatformat:2 }}</td>
+                                    <td>{{ p.supplier.name|default:"-" }}</td>
+                                    <td><span class="badge bg-warning text-dark">审批中</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="empty-state" style="padding:0.8rem;">
+                        <i class="bi bi-check-circle" style="font-size:1.2rem; color:#10b981;"></i>
+                        <p style="font-size:0.8rem;">暂无待审批采购计划</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- 待处理发货单 -->
+                <div style="padding:0 1rem 0.8rem;">
+                    <div style="font-weight:600; font-size:0.85rem; color:#374151; margin-bottom:0.5rem;">
+                        <i class="bi bi-truck" style="color:#8b5cf6;"></i> 待处理发货单
+                        {% if pending_deliveries %}<span style="font-weight:400; color:#9ca3af;">({{ pending_deliveries|length }})</span>{% endif %}
+                    </div>
+                    {% if pending_deliveries %}
+                    <div style="overflow-x:auto;">
+                        <table class="recent-table">
+                            <thead>
+                                <tr>
+                                    <th>发货单号</th>
+                                    <th>项目</th>
+                                    <th>材料</th>
+                                    <th>数量</th>
+                                    <th>金额</th>
+                                    <th>供应商</th>
+                                    <th>送货方式</th>
+                                    <th>状态</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for d in pending_deliveries %}
+                                <tr>
+                                    <td style="font-weight:600; color:#8b5cf6;">{{ d.no }}</td>
+                                    <td>{{ d.purchase_plan.project.name|default:"-" }}</td>
+                                    <td>{{ d.purchase_plan.material.name|default:"-" }}</td>
+                                    <td>{{ d.actual_quantity }}</td>
+                                    <td style="font-weight:600;">¥{{ d.actual_total_amount|floatformat:2 }}</td>
+                                    <td>{{ d.supplier.name|default:"-" }}</td>
+                                    <td>{{ d.get_shipping_method_display|default:"-" }}</td>
+                                    <td><span class="badge bg-warning text-dark">待发货</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="empty-state" style="padding:0.8rem;">
+                        <i class="bi bi-check-circle" style="font-size:1.2rem; color:#10b981;"></i>
+                        <p style="font-size:0.8rem;">暂无待处理发货单</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+
+{% endif %}
+
     </div>
 </div>
 {% endblock %}

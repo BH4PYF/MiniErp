@@ -5,7 +5,7 @@ from django.utils import timezone
 from decimal import Decimal
 from inventory.models import Budget, BudgetItem, Project, SubcontractList
 from inventory.services.rate_limit_service import check_rate_limit
-from .utils import create_excel_workbook, set_column_widths, make_excel_response
+from .utils import create_excel_workbook, set_column_widths, make_excel_response, admin_management_required
 
 
 def budget_list(request):
@@ -33,11 +33,9 @@ def budget_list(request):
     })
 
 
+@admin_management_required
 def budget_create(request):
     """创建分包预算"""
-    if not request.user.is_authenticated:
-        return redirect('login')
-    
     projects = Project.objects.all()
     
     if request.method == 'POST':
@@ -87,11 +85,9 @@ def budget_create(request):
     return render(request, 'inventory/budget_create.html', {'projects': projects, 'subcontract_lists': subcontract_lists})
 
 
+@admin_management_required
 def budget_edit(request, pk):
     """编辑分包预算"""
-    if not request.user.is_authenticated:
-        return redirect('login')
-    
     budget = get_object_or_404(Budget, pk=pk)
     projects = Project.objects.all()
     subcontract_lists = SubcontractList.objects.all()
@@ -138,11 +134,9 @@ def budget_edit(request, pk):
     })
 
 
+@admin_management_required
 def budget_delete(request, pk):
     """删除分包预算"""
-    if not request.user.is_authenticated:
-        return redirect('login')
-    
     budget = get_object_or_404(Budget, pk=pk)
     
     if request.method == 'POST':

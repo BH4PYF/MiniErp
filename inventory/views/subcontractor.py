@@ -4,7 +4,7 @@ from django.db import transaction
 from django.utils import timezone
 from inventory.models import Subcontractor, SubcontractCategory
 from inventory.services.rate_limit_service import check_rate_limit
-from .utils import create_excel_workbook, set_column_widths, make_excel_response
+from .utils import create_excel_workbook, set_column_widths, make_excel_response, admin_management_required
 
 
 def subcontractor_list(request):
@@ -30,11 +30,9 @@ def subcontractor_list(request):
     return render(request, 'inventory/subcontractor_list.html', {'subcontractors': subcontractors, 'categories': categories, 'q': q, 'main_type': main_type})
 
 
+@admin_management_required
 def subcontractor_create(request):
     """创建分包商"""
-    if not request.user.is_authenticated:
-        return redirect('login')
-    
     if request.method == 'POST':
         # 检查速率限制
         if not check_rate_limit(request, 'subcontractor_create', limit=5, window=60):
@@ -70,11 +68,9 @@ def subcontractor_create(request):
     return render(request, 'inventory/subcontractor_create.html', {'categories': categories})
 
 
+@admin_management_required
 def subcontractor_edit(request, pk):
     """编辑分包商"""
-    if not request.user.is_authenticated:
-        return redirect('login')
-    
     subcontractor = get_object_or_404(Subcontractor, pk=pk)
     
     if request.method == 'POST':
@@ -101,11 +97,9 @@ def subcontractor_edit(request, pk):
     return render(request, 'inventory/subcontractor_edit.html', {'subcontractor': subcontractor, 'categories': categories})
 
 
+@admin_management_required
 def subcontractor_delete(request, pk):
     """删除分包商"""
-    if not request.user.is_authenticated:
-        return redirect('login')
-    
     subcontractor = get_object_or_404(Subcontractor, pk=pk)
     
     if request.method == 'POST':

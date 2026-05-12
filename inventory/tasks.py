@@ -6,7 +6,12 @@ from datetime import datetime
 from celery import shared_task
 from django.utils import timezone
 
-from .models import Material, InboundRecord, PurchasePlan, Delivery, Category, Supplier, MaterialPlan
+from .models import (
+    Material, InboundRecord, PurchasePlan, Delivery, Category, Supplier,
+    MaterialPlan, Project, Subcontractor, SubcontractCategory, SubcontractList,
+    Budget, BudgetItem, Contract, ContractItem,
+    Measurement, MeasurementItem, Settlement, SettlementItem,
+)
 from .views.utils import create_excel_workbook, set_column_widths
 
 logger = logging.getLogger('inventory')
@@ -421,6 +426,19 @@ def backup_data_task(self, user_id):
             'suppliers': list(Supplier.all_objects.values()[:MAX_BACKUP_ROWS]),
             'inbound_records': list(InboundRecord.all_objects.values()[:MAX_BACKUP_ROWS]),
             'purchase_plans': list(PurchasePlan.all_objects.values()[:MAX_BACKUP_ROWS]),
+            'deliveries': list(Delivery.all_objects.values()[:MAX_BACKUP_ROWS]),
+            'subcontractors': list(Subcontractor.all_objects.values()[:MAX_BACKUP_ROWS]),
+            'subcontract_categories': list(SubcontractCategory.all_objects.values()[:MAX_BACKUP_ROWS]),
+            'subcontract_lists': list(SubcontractList.all_objects.values()[:MAX_BACKUP_ROWS]),
+            'budgets': list(Budget.all_objects.values()[:MAX_BACKUP_ROWS]),
+            'budget_items': list(BudgetItem.objects.values()[:MAX_BACKUP_ROWS]),
+            'contracts': list(Contract.all_objects.values()[:MAX_BACKUP_ROWS]),
+            'contract_items': list(ContractItem.objects.values()[:MAX_BACKUP_ROWS]),
+            'measurements': list(Measurement.all_objects.values()[:MAX_BACKUP_ROWS]),
+            'measurement_items': list(MeasurementItem.objects.values()[:MAX_BACKUP_ROWS]),
+            'settlements': list(Settlement.all_objects.values()[:MAX_BACKUP_ROWS]),
+            'settlement_items': list(SettlementItem.objects.values()[:MAX_BACKUP_ROWS]),
+            'material_plans': list(MaterialPlan.objects.values()[:MAX_BACKUP_ROWS]),
             'users': list(User.objects.values('id', 'username', 'first_name', 'last_name', 'email', 'is_active', 'is_superuser')[:MAX_BACKUP_ROWS]),
         }
         

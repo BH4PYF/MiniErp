@@ -11,8 +11,8 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             '--password',
-            default='12345678',
-            help='默认密码（默认：12345678）',
+            default=None,
+            help='指定密码（不指定则自动生成随机密码）',
         )
 
     def handle(self, *args, **options):
@@ -24,7 +24,7 @@ class Command(BaseCommand):
 
         for supplier in suppliers:
             with transaction.atomic():
-                user, reason = create_user_for_supplier(supplier, password)
+                user, reason, _ = create_user_for_supplier(supplier, password)
                 if user:
                     created += 1
                     self.stdout.write(

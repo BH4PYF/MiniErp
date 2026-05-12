@@ -361,7 +361,7 @@ def export_material_plans(request):
     end_date = request.GET.get('end_date', '')
 
     if q:
-        plans = plans.filter(plan_number__icontains=q) | plans.filter(project__name__icontains=q)
+        plans = plans.filter(Q(plan_number__icontains=q) | Q(project__name__icontains=q))
     if project_id:
         plans = plans.filter(project_id=project_id)
     if start_date:

@@ -1,4 +1,5 @@
 import logging
+import secrets
 from datetime import datetime, date
 from decimal import Decimal, InvalidOperation
 from functools import wraps
@@ -6,7 +7,7 @@ from functools import wraps
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseForbidden
 from django.db.models import Max
 from django.db.models.functions import Substr, Cast
 from django.db.models import IntegerField
@@ -107,6 +108,18 @@ def role_required(*roles):
             return view_func(request, *args, **kwargs)
         return wrapper
     return decorator
+
+
+def admin_management_required(view_func):
+    """只允许管理员和管理层访问"""
+    @wraps(view_func)
+    def _wrapped(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        if not hasattr(request.user, 'profile') or request.user.profile.role not in ['admin', 'management']:
+            return HttpResponseForbidden('权限不足')
+        return view_func(request, *args, **kwargs)
+    return _wrapped
 
 
 def permission_required(perm):
@@ -311,23 +324,26 @@ def validate_required_fields(post_data, field_map):
     return None
 
 
-def create_user_for_supplier(supplier, password='12345678'):
+def create_user_for_supplier(supplier, password=None):
     """为供应商自动创建关联的用户账号。
 
     用户名使用供应商编号（小写），如 sup0001。
-    如果该供应商已有关联用户则跳过，返回 (None, '已存在')。
-    如果用户名已被占用则跳过，返回 (None, '用户名冲突')。
-    成功时返回 (user, None)。
+    如果该供应商已有关联用户则跳过，返回 (None, '已存在', None)。
+    如果用户名已被占用则跳过，返回 (None, '用户名冲突', None)。
+    成功时返回 (user, None, password)。
     """
+    if password is None:
+        password = secrets.token_urlsafe(8)
+
     # 已有关联用户，跳过
     if supplier.user_profiles.exists():
-        return None, '已存在'
+        return None, '已存在', None
 
     username = supplier.code.lower()
 
     # 用户名冲突
     if User.objects.filter(username=username).exists():
-        return None, '用户名冲突'
+        return None, '用户名冲突', None
 
     user = User.objects.create_user(
         username=username,
@@ -342,7 +358,7 @@ def create_user_for_supplier(supplier, password='12345678'):
             'supplier_info': supplier,
         },
     )
-    return user, None
+    return user, None, password
 
 
 def parse_date(val):

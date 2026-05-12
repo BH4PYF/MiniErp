@@ -35,9 +35,12 @@ from .settings import (
     settings_page, settings_users_api, settings_logs_api,
     add_custom_category,
     delete_category, save_system_settings, save_login_security_settings,
+    backup_data, restore_data, clear_all_data, init_categories,
+)
+from .users import (
     user_list, user_save, user_delete, user_detail_api,
     user_groups,
     profile_page, change_password, update_profile,
-    log_list, backup_data, restore_data, clear_all_data, init_categories,
+    log_list,
 )
 from .performance import performance_dashboard, api_performance_stats

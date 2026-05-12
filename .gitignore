@@ -48,3 +48,6 @@ media/
 
 # 证书文件
 ssl/
+
+# Accidental pip install artifacts
+=*

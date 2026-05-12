@@ -61,21 +61,17 @@ def login_view(request):
             login(request, user)
             clear_login_attempts(username, ip_address)
             if not hasattr(user, 'profile'):
-                Profile.objects.create(user=user, role='admin' if user.is_superuser else 'clerk')
+                Profile.objects.create(user=user, role='admin' if user.is_superuser else 'management')
             log_operation(user, '系统', 'login', f'{user.username} 登录系统')
             # 如果是 AJAX 请求，返回成功响应
             if is_ajax_request(request):
                 if user.profile.role == 'supplier':
                     redirect_url = 'delivery_list'
-                elif user.profile.role == 'subcontractor':
-                    redirect_url = 'measurement_list'
                 else:
                     redirect_url = 'dashboard'
                 return JsonResponse({'success': True, 'message': '登录成功', 'redirect_url': redirect_url})
             if user.profile.role == 'supplier':
                 return redirect('delivery_list')
-            if user.profile.role == 'subcontractor':
-                return redirect('measurement_list')
             return redirect('dashboard')
 
         increment_login_attempts(username, ip_address)

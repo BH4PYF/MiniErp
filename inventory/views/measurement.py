@@ -1,12 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.core.cache import cache
-from django.db import transaction
+from django.db import DatabaseError, IntegrityError, transaction
 from django.utils import timezone
 from decimal import Decimal
 from inventory.models import Measurement, MeasurementItem, Contract, Project, Subcontractor, SubcontractList
 from inventory.services.rate_limit_service import check_rate_limit
-from .utils import create_excel_workbook, set_column_widths, make_excel_response
+from .utils import create_excel_workbook, set_column_widths, make_excel_response, admin_management_required
 
 
 def measurement_list(request):
@@ -55,11 +55,9 @@ def clear_dashboard_cache(project_id=None):
     cache.delete_many(cache_keys)
 
 
+@admin_management_required
 def measurement_create(request):
     """创建进度计量"""
-    if not request.user.is_authenticated:
-        return redirect('login')
-    
     contracts = Contract.objects.all()
     
     if request.method == 'POST':
@@ -123,17 +121,15 @@ def measurement_create(request):
             
             messages.success(request, '进度计量创建成功')
             return redirect('measurement_list')
-        except Exception as e:
-            messages.error(request, f'创建失败: {str(e)}')
+        except (IntegrityError, DatabaseError) as e:
+            messages.error(request, f'操作失败，请稍后重试')
     
     return render(request, 'inventory/measurement_create.html', {'contracts': contracts})
 
 
+@admin_management_required
 def measurement_edit(request, pk):
     """编辑进度计量"""
-    if not request.user.is_authenticated:
-        return redirect('login')
-    
     measurement = get_object_or_404(Measurement, pk=pk)
     contracts = Contract.objects.all()
     
@@ -188,8 +184,8 @@ def measurement_edit(request, pk):
             
             messages.success(request, '进度计量更新成功')
             return redirect('measurement_list')
-        except Exception as e:
-            messages.error(request, f'更新失败: {str(e)}')
+        except (IntegrityError, DatabaseError) as e:
+            messages.error(request, f'操作失败，请稍后重试')
     
     return render(request, 'inventory/measurement_edit.html', {
         'measurement': measurement, 
@@ -197,11 +193,9 @@ def measurement_edit(request, pk):
     })
 
 
+@admin_management_required
 def measurement_delete(request, pk):
     """删除进度计量"""
-    if not request.user.is_authenticated:
-        return redirect('login')
-    
     measurement = get_object_or_404(Measurement, pk=pk)
     project_id = measurement.project_id
     
@@ -213,8 +207,8 @@ def measurement_delete(request, pk):
                 measurement.delete()
                 messages.success(request, '进度计量删除成功')
                 clear_dashboard_cache(project_id)
-        except Exception as e:
-            messages.error(request, f'删除失败: {str(e)}')
+        except (IntegrityError, DatabaseError) as e:
+            messages.error(request, f'操作失败，请稍后重试')
         return redirect('measurement_list')
     
     return redirect('measurement_list')

@@ -108,7 +108,7 @@
                         <select class="form-select form-select-sm" name="category" required>
                             <option value="">请选择分类</option>
                             {% for category in categories %}
-                            <option value="{{ category.category_name }}">{{ category.category_name }}</option>
+                            <option value="{{ category.id }}">{{ category.category_name }}</option>
                             {% endfor %}
                         </select>
                     </td>
@@ -122,7 +122,7 @@
             </form>
             {% for sl in subcontract_lists %}
             <tr>
-                <td>{{ sl.code }}</td><td>{{ sl.name }}</td><td>{{ sl.category }}</td><td>{{ sl.construction_params }}</td>
+                <td>{{ sl.code }}</td><td>{{ sl.name }}</td><td>{{ sl.category.category_name|default:'' }}</td><td>{{ sl.construction_params }}</td>
                 <td class="text-center">{{ sl.unit }}</td>
                 <td class="text-right">{{ sl.reference_price|floatformat:2 }}</td>
                 <td class="text-right">{{ sl.get_total_completed_quantity|floatformat:2 }}</td>

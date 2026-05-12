@@ -266,10 +266,14 @@ class SubcontractListModelTest(TestCase):
 
     @classmethod
     def setUpTestData(cls):
+        cls.category = SubcontractCategory.objects.create(
+            category_code='SCC001',
+            category_name='土石方工程'
+        )
         cls.list_item = SubcontractList.objects.create(
             code='SCL001',
             name='土方开挖',
-            category='土石方工程',
+            category=cls.category,
             construction_params='普通土',
             unit='m³',
             reference_price=Decimal('25.00')
@@ -327,7 +331,10 @@ class MeasurementModelTest(TestCase):
         )
         cls.subcontract_list = SubcontractList.objects.create(
             code='SCL001', name='土方开挖',
-            category='土石方', construction_params='普通土',
+            category=SubcontractCategory.objects.create(
+                category_code='CAT001', category_name='土石方'
+            ),
+            construction_params='普通土',
             unit='m³', reference_price=Decimal('25.00')
         )
 

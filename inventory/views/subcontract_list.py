@@ -4,7 +4,7 @@ from django.db import transaction
 from django.utils import timezone
 from inventory.models import SubcontractList, SubcontractCategory
 from inventory.services.rate_limit_service import check_rate_limit
-from .utils import create_excel_workbook, set_column_widths, make_excel_response
+from .utils import create_excel_workbook, set_column_widths, make_excel_response, admin_management_required
 
 
 def subcontract_list_list(request):
@@ -27,11 +27,9 @@ def subcontract_list_list(request):
     return render(request, 'inventory/subcontract_list_list.html', {'subcontract_lists': subcontract_lists, 'categories': categories, 'q': q})
 
 
+@admin_management_required
 def subcontract_list_create(request):
     """创建分包清单"""
-    if not request.user.is_authenticated:
-        return redirect('login')
-    
     if request.method == 'POST':
         # 检查速率限制
         if not check_rate_limit(request, 'subcontract_list_create', limit=5, window=60):
@@ -50,7 +48,7 @@ def subcontract_list_create(request):
             subcontract_list = SubcontractList(
                 code=new_code,
                 name=request.POST.get('name'),
-                category=request.POST.get('category'),
+                category_id=request.POST.get('category'),
                 construction_params=request.POST.get('construction_params'),
                 unit=request.POST.get('unit'),
                 reference_price=request.POST.get('reference_price'),
@@ -67,11 +65,9 @@ def subcontract_list_create(request):
     return redirect('subcontract_list_list')
 
 
+@admin_management_required
 def subcontract_list_edit(request, pk):
     """编辑分包清单"""
-    if not request.user.is_authenticated:
-        return redirect('login')
-    
     subcontract_list = get_object_or_404(SubcontractList, pk=pk)
     
     if request.method == 'POST':
@@ -82,7 +78,7 @@ def subcontract_list_edit(request, pk):
         
         try:
             subcontract_list.name = request.POST.get('name')
-            subcontract_list.category = request.POST.get('category')
+            subcontract_list.category_id = request.POST.get('category')
             subcontract_list.construction_params = request.POST.get('construction_params')
             subcontract_list.unit = request.POST.get('unit')
             subcontract_list.reference_price = request.POST.get('reference_price')
@@ -98,11 +94,9 @@ def subcontract_list_edit(request, pk):
     return redirect('subcontract_list_list')
 
 
+@admin_management_required
 def subcontract_list_delete(request, pk):
     """删除分包清单"""
-    if not request.user.is_authenticated:
-        return redirect('login')
-    
     subcontract_list = get_object_or_404(SubcontractList, pk=pk)
     
     if request.method == 'POST':
@@ -142,7 +136,7 @@ def export_subcontract_lists(request):
     for sl in subcontract_lists:
         ws.cell(row=row, column=1, value=sl.code)
         ws.cell(row=row, column=2, value=sl.name)
-        ws.cell(row=row, column=3, value=sl.category or '')
+        ws.cell(row=row, column=3, value=sl.category.category_name if sl.category else '')
         ws.cell(row=row, column=4, value=sl.construction_params or '')
         ws.cell(row=row, column=5, value=sl.unit or '')
         ws.cell(row=row, column=6, value=float(sl.reference_price) if sl.reference_price else 0)

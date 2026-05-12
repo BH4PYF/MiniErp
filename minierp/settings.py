@@ -43,7 +43,7 @@ if SENTRY_DSN and not DEBUG:
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # 确保日志目录存在
-LOG_DIR = BASE_DIR / 'logs'
+LOG_DIR = Path(os.getenv('LOG_DIR', str(BASE_DIR / 'logs')))
 LOG_DIR.mkdir(exist_ok=True)
 
 # 从环境变量读取配置
@@ -237,7 +237,7 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': BASE_DIR / 'logs' / 'django.log',
+            'filename': LOG_DIR / 'django.log',
             'maxBytes': 1024 * 1024 * 10,  # 10MB
             'backupCount': 5,                # 保留5个备份
             'formatter': 'verbose',
@@ -246,7 +246,7 @@ LOGGING = {
         'error_file': {
             'level': 'ERROR',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': BASE_DIR / 'logs' / 'error.log',
+            'filename': LOG_DIR / 'error.log',
             'maxBytes': 1024 * 1024 * 10,  # 10MB
             'backupCount': 5,
             'formatter': 'verbose',

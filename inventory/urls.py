@@ -1,7 +1,8 @@
 from django.urls import path
 from . import views
 from .views import tasks as task_views
-from .views import subcontractor, subcontract_list, budget, contract, measurement, settlement, api, material_plan, report
+from .views import users as user_views
+from .views import subcontractor, subcontract_list, budget, contract, measurement, settlement, api, material_plan, report, mobile
 
 urlpatterns = [
     # 登录/登出
@@ -9,6 +10,9 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     # 仪表盘
     path('', views.dashboard, name='dashboard'),
+    # 移动端
+    path('m/', mobile.mobile_dashboard, name='mobile_dashboard'),
+    path('m/report/', mobile.mobile_report, name='mobile_report'),
     # 项目管理
     path('projects/', views.project_list, name='project_list'),
     path('projects/save/', views.project_save, name='project_save'),
@@ -92,20 +96,20 @@ urlpatterns = [
     path('api/export/material-plans/', task_views.export_material_plans_async, name='export_material_plans_async'),
     path('api/backup/', task_views.backup_data_async, name='backup_data_async'),
     # 操作日志
-    path('logs/', views.log_list, name='log_list'),
+    path('logs/', user_views.log_list, name='log_list'),
     # 性能监控
     path('performance/', views.performance_dashboard, name='performance_dashboard'),
     path('api/performance/stats/', views.api_performance_stats, name='api_performance_stats'),
     # 用户管理
-    path('users/', views.user_list, name='user_list'),
-    path('users/save/', views.user_save, name='user_save'),
-    path('users/<int:pk>/delete/', views.user_delete, name='user_delete'),
-    path('users/groups/', views.user_groups, name='user_groups'),
-    path('api/users/<int:pk>/', views.user_detail_api, name='user_detail_api'),
+    path('users/', user_views.user_list, name='user_list'),
+    path('users/save/', user_views.user_save, name='user_save'),
+    path('users/<int:pk>/delete/', user_views.user_delete, name='user_delete'),
+    path('users/groups/', user_views.user_groups, name='user_groups'),
+    path('api/users/<int:pk>/', user_views.user_detail_api, name='user_detail_api'),
     # 个人设置（所有已登录用户）
-    path('profile/', views.profile_page, name='profile_page'),
-    path('profile/change-password/', views.change_password, name='change_password'),
-    path('profile/update/', views.update_profile, name='update_profile'),
+    path('profile/', user_views.profile_page, name='profile_page'),
+    path('profile/change-password/', user_views.change_password, name='change_password'),
+    path('profile/update/', user_views.update_profile, name='update_profile'),
     # 系统设置
     path('settings/', views.settings_page, name='settings_page'),
     path('settings/backup/', views.backup_data, name='backup_data'),

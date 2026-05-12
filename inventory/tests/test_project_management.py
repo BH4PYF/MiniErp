@@ -67,7 +67,7 @@ class ProjectManagementIntegrationTest(TestCase):
         cls.subcontract_list = SubcontractList.objects.create(
             code='SCL001',
             name='土方开挖',
-            category='土石方工程',
+            category=cls.category,
             construction_params='普通土,机械开挖',
             unit='m³',
             reference_price=Decimal('25.00')
