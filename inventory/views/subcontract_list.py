@@ -16,7 +16,7 @@ def subcontract_list_list(request):
     q = request.GET.get('q', '')
     
     # 构建查询集
-    subcontract_lists = SubcontractList.objects.all()
+    subcontract_lists = SubcontractList.objects.select_related('category').all()
     
     # 应用搜索
     if q:
@@ -130,8 +130,8 @@ def export_subcontract_lists(request):
     
     headers = ['清单编号', '清单名称', '分类', '施工参数', '计量单位', '参考单价', '累计完成量', '平均单价']
     wb, ws, _ = create_excel_workbook('分包清单', headers)
-    
-    subcontract_lists = SubcontractList.objects.all()
+
+    subcontract_lists = SubcontractList.objects.select_related('category').all()
     row = 2
     for sl in subcontract_lists:
         ws.cell(row=row, column=1, value=sl.code)

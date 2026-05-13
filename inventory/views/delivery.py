@@ -35,7 +35,7 @@ def delivery_list(request):
     if request.user.profile.is_supplier:
         supplier_obj = get_supplier_from_user(request.user)
         deliveries_qs = Delivery.objects.select_related(
-            'purchase_plan', 'purchase_plan__material', 'purchase_plan__project'
+            'purchase_plan', 'purchase_plan__material', 'purchase_plan__project', 'supplier'
         ).filter(supplier=supplier_obj).order_by('-create_time')
         # 供应商仅看到与自己主营材料类型相关的采购中采购计划
         plan_filter = {'status': PurchasePlan.STATUS_PURCHASING}
@@ -46,7 +46,7 @@ def delivery_list(request):
         ).order_by('-create_time')
     else:
         deliveries_qs = Delivery.objects.select_related(
-            'purchase_plan', 'purchase_plan__material', 'purchase_plan__project'
+            'purchase_plan', 'purchase_plan__material', 'purchase_plan__project', 'supplier'
         ).all().order_by('-create_time')
         # 非供应商用户可以看到所有采购中的采购计划（已发货的已创建过发货单，不再显示）
         available_plans = PurchasePlan.objects.select_related('project', 'material').filter(

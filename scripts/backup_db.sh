@@ -1,5 +1,5 @@
 #!/bin/bash
-# 数据库备份脚本
+# 数据库备份脚本（Docker 版）
 # 用法: ./scripts/backup_db.sh [保留天数]
 
 set -e
@@ -8,13 +8,7 @@ set -e
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 BACKUP_DIR="$PROJECT_DIR/backups"
 RETENTION_DAYS=${1:-30}  # 默认保留30天
-
-# 从环境变量获取数据库配置
-DB_NAME=${DB_NAME:-"material_system"}
-DB_USER=${DB_USER:-"postgres"}
-DB_PASSWORD=${DB_PASSWORD:-""}
-DB_HOST=${DB_HOST:-"127.0.0.1"}
-DB_PORT=${DB_PORT:-"5432"}
+CONTAINER_NAME="postgres-db"
 
 # 颜色输出
 GREEN='\033[0;32m'
@@ -29,8 +23,8 @@ mkdir -p "$BACKUP_DIR"
 TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
 BACKUP_FILE="$BACKUP_DIR/db-$TIMESTAMP.sql"
 
-# 执行备份
-PGPASSWORD="$DB_PASSWORD" pg_dump -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$BACKUP_FILE"
+# 执行备份（通过 docker exec，无需密码）
+docker exec "$CONTAINER_NAME" pg_dump -U postgres material_system > "$BACKUP_FILE"
 
 # 压缩备份
 gzip -f "$BACKUP_FILE"

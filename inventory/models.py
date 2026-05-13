@@ -448,8 +448,16 @@ class MeasurementItem(models.Model):
         self.cumulative_quantity = self.previous_quantity + self.current_quantity
         self.current_value = self.current_quantity * self.unit_price
         super().save(*args, **kwargs)
-        # 更新关联的计量记录
-        self.measurement.save()
+        # 用 update() 避免触发 Measurement.save() 的完整逻辑
+        from django.db.models import Sum
+        agg = MeasurementItem.objects.filter(measurement_id=self.measurement_id).aggregate(
+            t=Sum('current_value')
+        )
+        current_value = agg['t'] or Decimal('0')
+        Measurement.objects.filter(pk=self.measurement_id).update(
+            current_value=current_value,
+            cumulative_value=self.measurement.previous_value + current_value
+        )
 
     def __str__(self):
         return f"{self.measurement.code} - {self.subcontract_list.name}"
@@ -845,12 +853,16 @@ class MaterialPlanItem(models.Model):
     amount = models.DecimalField('金额', max_digits=12, decimal_places=2, default=0)
     
     def save(self, *args, **kwargs):
-        # 自动计算金额
         self.amount = self.quantity * self.unit_price
         super().save(*args, **kwargs)
-        # 更新材料计划总金额
-        self.material_plan.total_amount = sum(item.amount for item in self.material_plan.items.all())
-        self.material_plan.save()
+        # 用数据库聚合更新总金额，避免 Python 循环
+        from django.db.models import Sum
+        agg = MaterialPlanItem.objects.filter(material_plan_id=self.material_plan_id).aggregate(
+            t=Sum('amount')
+        )
+        MaterialPlan.objects.filter(pk=self.material_plan_id).update(
+            total_amount=agg['t'] or Decimal('0')
+        )
     
     def __str__(self):
         return f"{getattr(self.material, 'name', '未知材料')} - {self.quantity} {self.unit}"

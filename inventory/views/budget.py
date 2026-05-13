@@ -17,7 +17,7 @@ def budget_list(request):
     selected_project = request.GET.get('project')
     
     # 构建查询集
-    budgets = Budget.objects.all()
+    budgets = Budget.objects.select_related('project').all()
     
     # 应用筛选
     if selected_project:
@@ -169,8 +169,8 @@ def export_budgets(request):
     
     headers = ['编号', '项目名称', '预算总额', '实际产值', '完成进度(%)']
     wb, ws, _ = create_excel_workbook('分包预算列表', headers)
-    
-    budgets = Budget.objects.all()
+
+    budgets = Budget.objects.select_related('project').all()
     row = 2
     for b in budgets:
         ws.cell(row=row, column=1, value=b.code)

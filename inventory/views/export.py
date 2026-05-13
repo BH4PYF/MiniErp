@@ -120,7 +120,7 @@ def export_excel(request):
         headers = ['供应商编号', '供应商名称', '联系人', '联系电话', '地址', '主营类型', '信用等级', '累计采购额']
         wb, ws, _ = create_excel_workbook('供应商汇总', headers, style='report')
         row = 2
-        for s in Supplier.objects.all().order_by('code')[:MAX_EXPORT_ROWS]:
+        for s in Supplier.objects.select_related('main_type').all().order_by('code')[:MAX_EXPORT_ROWS]:
             total_purchase = s.get_total_purchase()
             ws.cell(row, 1, value=s.code)
             ws.cell(row, 2, value=s.name)

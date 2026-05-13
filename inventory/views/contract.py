@@ -17,9 +17,9 @@ def contract_list(request):
         contracts = Contract.objects.filter(
             subcontractor__user_profiles__user=request.user,
             is_deleted=False,
-        )
+        ).select_related('project', 'subcontractor')
     else:
-        contracts = Contract.objects.all()
+        contracts = Contract.objects.select_related('project', 'subcontractor').all()
 
     project_id = request.GET.get('project')
     subcontractor_id = request.GET.get('subcontractor')
@@ -208,7 +208,7 @@ def export_contracts(request):
     headers = ['合同编号', '合同名称', '项目名称', '分包商', '合同总额', '实际产值', '完成进度(%)']
     wb, ws, _ = create_excel_workbook('分包合同列表', headers)
     
-    contracts = Contract.objects.all()
+    contracts = Contract.objects.select_related('project', 'subcontractor').all()
     row = 2
     for c in contracts:
         ws.cell(row=row, column=1, value=c.code)

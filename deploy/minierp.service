@@ -1,20 +1,17 @@
 [Unit]
-Description=MiniErp Project Management System
-After=network.target nginx.service
+Description=MiniErp Dockerized (web + celery)
+After=network.target docker.service
+Requires=docker.service
 
 [Service]
-Type=simple
+Type=oneshot
+RemainAfterExit=yes
 User=abc
-Group=abc
+Group=docker
 WorkingDirectory=/home/abc/MiniErp
-Environment="PATH=/home/abc/MiniErp/venv/bin"
-Environment="PYTHONPATH=/home/abc/MiniErp"
-Environment="DJANGO_SETTINGS_MODULE=minierp.settings"
-ExecStart=/home/abc/MiniErp/venv/bin/gunicorn --config /home/abc/MiniErp/deploy/gunicorn_config.py minierp.wsgi:application
-ExecReload=/bin/kill -s HUP $MAINPID
-ExecStop=/bin/kill -s TERM $MAINPID
-Restart=on-failure
-RestartSec=5
+ExecStart=/usr/bin/bash -c 'docker start minierp-web minierp-celery 2>/dev/null || true'
+ExecStop=/usr/bin/bash -c 'docker stop minierp-web minierp-celery 2>/dev/null || true'
+ExecReload=/usr/bin/bash -c 'docker restart minierp-web minierp-celery 2>/dev/null || true'
 
 [Install]
 WantedBy=multi-user.target

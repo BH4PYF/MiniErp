@@ -50,4 +50,4 @@ media/
 ssl/
 
 # Accidental pip install artifacts
-=*
+=*deploy/logs/

@@ -14,9 +14,10 @@ RETENTION_DAYS=${1:-30}  # 默认保留30天
 # 从环境变量获取数据库配置
 DB_NAME=${DB_NAME:-"material_system"}
 DB_USER=${DB_USER:-"postgres"}
-DB_PASSWORD=${DB_PASSWORD:-"postgres"}
+DB_PASSWORD=${DB_PASSWORD:-""}
 DB_HOST=${DB_HOST:-"127.0.0.1"}
-DB_PORT=${DB_PORT:-"5432"}
+DB_PORT=${DB_PORT:-"5432"}  # Docker 映射端口，宿主机 pg_dump 直连
+DOCKER_DB_CONTAINER="postgres-db"  # 优先走 docker exec（无需密码）
 
 # 颜色输出
 GREEN='\033[0;32m'
@@ -40,7 +41,12 @@ echo -e "${YELLOW}================================${NC}"
 # 1. 备份 MiniErp 数据库
 MINIERP_DB_BACKUP="$BACKUP_DIR/databases/minierp-$TIMESTAMP.sql"
 echo -e "${GREEN}备份 MiniErp 数据库...${NC}"
-PGPASSWORD="$DB_PASSWORD" pg_dump -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$MINIERP_DB_BACKUP"
+if docker exec "$DOCKER_DB_CONTAINER" pg_dump -U postgres material_system > "$MINIERP_DB_BACKUP" 2>/dev/null; then
+    :
+else
+    echo -e "${YELLOW}⚠️  docker exec 失败，尝试宿主机直连...${NC}"
+    PGPASSWORD="$DB_PASSWORD" pg_dump -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$MINIERP_DB_BACKUP"
+fi
 # 压缩备份
 gzip -f "$MINIERP_DB_BACKUP"
 MINIERP_DB_BACKUP_GZ="$MINIERP_DB_BACKUP.gz"

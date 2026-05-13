@@ -472,36 +472,32 @@ def make_excel_response(wb, filename):
     return response
 
 
+@login_required
 def prometheus_metrics(request):
-    """Prometheus监控端点"""
-    from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram, Summary, generate_latest
+    """Prometheus监控端点（仅管理员可访问）"""
+    if not request.user.is_staff:
+        return HttpResponseForbidden('仅管理员可访问')
+    from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram, generate_latest
     from django.db import connection
-    import time
-    
+
     registry = CollectorRegistry()
-    
-    # 请求计数
+
     REQUEST_COUNT = Counter('minierp_requests_total', 'Total requests', ['method', 'path'], registry=registry)
-    # 请求延迟
     REQUEST_LATENCY = Histogram('minierp_request_duration_seconds', 'Request latency', ['method', 'path'], registry=registry)
-    # 数据库连接数
     DB_CONNECTIONS = Gauge('minierp_db_connections', 'Database connections', registry=registry)
-    # 内存使用
     MEMORY_USAGE = Gauge('minierp_memory_usage_bytes', 'Memory usage', registry=registry)
-    
-    # 记录请求
+
     REQUEST_COUNT.labels(method=request.method, path=request.path).inc()
-    
-    # 记录数据库连接数
     DB_CONNECTIONS.set(len(connection.queries))
-    
-    # 记录内存使用
-    import psutil
-    process = psutil.Process()
-    MEMORY_USAGE.set(process.memory_info().rss)
-    
-    # 生成指标
+
+    try:
+        import psutil
+        process = psutil.Process()
+        MEMORY_USAGE.set(process.memory_info().rss)
+    except ImportError:
+        pass
+
     metrics = generate_latest(registry)
-    
+
     from django.http import HttpResponse
     return HttpResponse(metrics, content_type='text/plain')

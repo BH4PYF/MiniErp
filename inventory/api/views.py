@@ -84,19 +84,13 @@ class MaterialViewSet(viewsets.ModelViewSet):
     ordering_fields = ['code', 'name', 'standard_price']
     
     def list(self, request, *args, **kwargs):
-        """获取材料列表（包含统计信息）"""
-        search_query = request.query_params.get('search', '')
+        """获取材料列表"""
         queryset = self.filter_queryset(self.get_queryset())
-        
-        # 使用服务层获取带统计信息的材料列表
-        materials_with_stats = MaterialService.get_materials_with_statistics(search_query=search_query)
-        
-        page = self.paginate_queryset(materials_with_stats)
+        page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
-        
-        serializer = self.get_serializer(materials_with_stats, many=True)
+        serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
     
     def create(self, request, *args, **kwargs):

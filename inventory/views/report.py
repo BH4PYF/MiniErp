@@ -156,7 +156,7 @@ def report_supplier_cost(request):
         
         # 缓存数据，有效期10分钟
         if export != 'excel':
-            cache.set(cache_key, {'inbounds': inbounds, 'total_amount': total_amount}, 600)
+            cache.set(cache_key, {'inbounds': list(inbounds), 'total_amount': total_amount}, 600)
 
     if export == 'excel':
         MAX_EXPORT_ROWS = 10000

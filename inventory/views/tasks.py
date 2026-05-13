@@ -2,7 +2,6 @@
 import logging
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_GET, require_POST
-from django.views.decorators.csrf import csrf_exempt
 from celery.result import AsyncResult
 from django.utils.timezone import now
 

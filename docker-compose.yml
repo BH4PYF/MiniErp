@@ -1,0 +1,70 @@
+version: "3.9"
+
+services:
+  db:
+    image: registry.cn-hangzhou.aliyuncs.com/jeecgdocker/pgvector:latest
+    container_name: postgres-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Liyifeiniuniu1027-
+      POSTGRES_DB: material_system
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    restart: unless-stopped
+
+  redis:
+    image: registry.cn-hangzhou.aliyuncs.com/jeecgdocker/redis:5.0
+    container_name: redis-db
+    command: redis-server --appendonly yes --save 900 1 --save 300 10 --save 60 10000
+    volumes:
+      - redis-data:/data
+    ports:
+      - "127.0.0.1:6379:6379"
+    restart: unless-stopped
+
+  web:
+    build: .
+    container_name: minierp-web
+    network_mode: host
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST=localhost
+      - REDIS_PORT=6379
+      - DB_HOST=127.0.0.1
+      - DB_PORT=5432
+    volumes:
+      - ./staticfiles:/app/staticfiles
+      - ./media:/app/media
+      - ./deploy/logs:/app/deploy/logs
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
+  celery:
+    build: .
+    container_name: minierp-celery
+    network_mode: host
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST=localhost
+      - REDIS_PORT=6379
+      - DB_HOST=127.0.0.1
+      - DB_PORT=5432
+    volumes:
+      - ./staticfiles:/app/staticfiles
+      - ./media:/app/media
+      - ./deploy/logs:/app/deploy/logs
+    command: celery -A minierp worker -l info -c 2
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redis-data:

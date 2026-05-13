@@ -2,7 +2,7 @@ from django.urls import path
 from . import views
 from .views import tasks as task_views
 from .views import users as user_views
-from .views import subcontractor, subcontract_list, budget, contract, measurement, settlement, api, material_plan, report, mobile
+from .views import subcontractor, subcontract_list, budget, contract, measurement, settlement, material_plan, report, mobile
 
 urlpatterns = [
     # 登录/登出

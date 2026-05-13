@@ -30,7 +30,7 @@ if SENTRY_DSN and not DEBUG:
         traces_sample_rate=float(os.getenv('SENTRY_TRACES_SAMPLE_RATE', '0.1')),
         profiles_sample_rate=float(os.getenv('SENTRY_PROFILES_SAMPLE_RATE', '0.1')),
         # 发送默认 PII（个人身份信息）
-        send_default_pii=True,
+        send_default_pii=False,
         # 性能监控
         _experiments={
             "continuous_profiling_auto_start": True,
@@ -282,7 +282,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://localhost:6379/1',
+        'LOCATION': f'redis://{os.getenv("REDIS_HOST", "localhost")}:{os.getenv("REDIS_PORT", "6379")}/1',
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
             'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
@@ -390,8 +390,8 @@ REST_FRAMEWORK = {
 }
 
 # ---------- Celery 配置 ----------
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_BROKER_URL = f'redis://{os.getenv("REDIS_HOST", "localhost")}:{os.getenv("REDIS_PORT", "6379")}/0'
+CELERY_RESULT_BACKEND = f'redis://{os.getenv("REDIS_HOST", "localhost")}:{os.getenv("REDIS_PORT", "6379")}/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
@@ -420,6 +420,5 @@ if _module_path:
         _apply = getattr(_module, 'apply', None)
         if callable(_apply):
             _apply(globals())
-    except Exception:
-        # 覆盖模块异常不应阻断主配置加载，保留基础配置可用性
-        pass
+    except (ImportError, AttributeError, TypeError) as e:
+        _logger.exception(f'加载配置覆盖模块失败: {_env}')

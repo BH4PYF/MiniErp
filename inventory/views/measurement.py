@@ -19,9 +19,9 @@ def measurement_list(request):
     
     if request.user.profile.is_subcontractor:
         subcontractor_contracts = Contract.objects.filter(subcontractor__user_profiles__user=request.user)
-        measurements = Measurement.objects.filter(contract__in=subcontractor_contracts)
+        measurements = Measurement.objects.filter(contract__in=subcontractor_contracts).select_related('contract', 'project', 'subcontractor')
     else:
-        measurements = Measurement.objects.all()
+        measurements = Measurement.objects.select_related('contract', 'project', 'subcontractor').all()
     
     if project_id:
         measurements = measurements.filter(project_id=project_id)
@@ -234,7 +234,7 @@ def export_measurements(request):
     headers = ['计量编号', '合同名称', '项目名称', '分包商', '计量周期开始', '计量周期截止', '之前产值', '本期产值', '累计产值']
     wb, ws, _ = create_excel_workbook('进度计量列表', headers)
     
-    measurements = Measurement.objects.all()
+    measurements = Measurement.objects.select_related('contract', 'project', 'subcontractor').all()
     row = 2
     for m in measurements:
         ws.cell(row=row, column=1, value=m.code)

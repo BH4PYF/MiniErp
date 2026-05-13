@@ -18,9 +18,9 @@ def settlement_list(request):
     
     if request.user.profile.is_subcontractor:
         subcontractor_contracts = Contract.objects.filter(subcontractor__user_profiles__user=request.user)
-        settlements = Settlement.objects.filter(contract__in=subcontractor_contracts)
+        settlements = Settlement.objects.filter(contract__in=subcontractor_contracts).select_related('contract', 'project', 'subcontractor')
     else:
-        settlements = Settlement.objects.all()
+        settlements = Settlement.objects.select_related('contract', 'project', 'subcontractor').all()
     
     if project_id:
         settlements = settlements.filter(project_id=project_id)
@@ -233,7 +233,7 @@ def export_settlements(request):
     headers = ['结算编号', '项目名称', '分包商', '合同编号', '计量产值', '扣款金额', '最终结算额']
     wb, ws, _ = create_excel_workbook('分包结算列表', headers)
     
-    settlements = Settlement.objects.all()
+    settlements = Settlement.objects.select_related('contract', 'project', 'subcontractor').all()
     row = 2
     for s in settlements:
         ws.cell(row=row, column=1, value=s.code)
