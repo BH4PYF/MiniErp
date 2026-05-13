@@ -146,19 +146,6 @@ h6 { font-size: var(--text-sm); }
     box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
 }
 
-/* 侧边栏分组标题 - 不可点击 */
-.disabled-link {
-    cursor: default !important;
-    opacity: 0.8;
-    font-size: var(--text-xs);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 0.625rem 1rem 0.25rem;
-    margin-bottom: 0;
-    color: #6b7280 !important;
-    pointer-events: none;
-}
-
 .sidebar-link i {
     width: 20px;
     margin-right: 10px;

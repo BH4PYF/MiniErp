@@ -38,10 +38,10 @@
                 </a>
                 {% if request.user.profile.is_admin or request.user.profile.is_management %}
                 <div class="nav-item">
-                    <div class="nav-link sidebar-link disabled-link">
-                        <i class="bi bi-archive"></i> 档案管理
-                    </div>
-                    <div id="archiveMenu">
+                    <a class="nav-link sidebar-link" data-bs-toggle="collapse" href="#archiveMenu" role="button" aria-expanded="false">
+                        <i class="bi bi-archive"></i> 档案管理 <i class="bi bi-chevron-down float-end small"></i>
+                    </a>
+                    <div class="collapse {% if 'project' in request.resolver_match.url_name or 'supplier' in request.resolver_match.url_name or 'subcontractor' in request.resolver_match.url_name or 'subcontract_list' in request.resolver_match.url_name or request.resolver_match.url_name == 'material_list' or request.resolver_match.url_name == 'material_create' or request.resolver_match.url_name == 'material_edit' or request.resolver_match.url_name == 'material_delete' or request.resolver_match.url_name == 'material_detail' %}show{% endif %}" id="archiveMenu">
                         <a class="nav-link sidebar-link ps-4 {% if 'project' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'project_list' %}">
                             <i class="bi bi-folder"></i> 项目档案
                         </a>
@@ -62,10 +62,10 @@
                 {% endif %}
                 <hr class="border-secondary my-1">
                 <div class="nav-item">
-                    <div class="nav-link sidebar-link disabled-link">
-                        <i class="bi bi-box"></i> 材料管理
-                    </div>
-                    <div id="materialMenu">
+                    <a class="nav-link sidebar-link" data-bs-toggle="collapse" href="#materialMenu" role="button" aria-expanded="false">
+                        <i class="bi bi-box"></i> 材料管理 <i class="bi bi-chevron-down float-end small"></i>
+                    </a>
+                    <div class="collapse {% if 'material_plan' in request.resolver_match.url_name or 'inbound' in request.resolver_match.url_name or 'purchase_plan' in request.resolver_match.url_name or 'delivery' in request.resolver_match.url_name or 'quick_receive' in request.resolver_match.url_name %}show{% endif %}" id="materialMenu">
                         <a class="nav-link sidebar-link ps-4 {% if 'material_plan' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'material_plan_list' %}">
                             <i class="bi bi-clipboard-check"></i> 材料计划
                         </a>
@@ -87,10 +87,10 @@
                 </div>
                 <hr class="border-secondary my-1">
                 <div class="nav-item">
-                    <div class="nav-link sidebar-link disabled-link">
-                        <i class="bi bi-file-earmark-text"></i> 分包管理
-                    </div>
-                    <div id="subcontractMenu">
+                    <a class="nav-link sidebar-link" data-bs-toggle="collapse" href="#subcontractMenu" role="button" aria-expanded="false">
+                        <i class="bi bi-file-earmark-text"></i> 分包管理 <i class="bi bi-chevron-down float-end small"></i>
+                    </a>
+                    <div class="collapse {% if 'budget' in request.resolver_match.url_name or 'contract' in request.resolver_match.url_name or 'measurement' in request.resolver_match.url_name or 'settlement' in request.resolver_match.url_name %}show{% endif %}" id="subcontractMenu">
                         {% if request.user.profile.is_admin or request.user.profile.is_management %}
                         <a class="nav-link sidebar-link ps-4 {% if 'budget' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'budget_list' %}">
                             <i class="bi bi-cash-stack"></i> 分包预算
