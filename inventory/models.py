@@ -75,9 +75,7 @@ class Profile(models.Model):
     ROLE_CHOICES = [
         ('admin', '管理员'),
         ('management', '管理层'),
-        ('material_dept', '物资部'),
         ('supplier', '供应商'),
-        ('clerk', '材料员'),
         ('subcontractor', '分包商'),
     ]
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')

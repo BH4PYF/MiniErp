@@ -32,7 +32,7 @@ def _clear_runtime_cache():
 @pytest.fixture
 def user_factory(db):
     """快速创建带 Profile 的用户。"""
-    def _create(username='tester', role='clerk', password='pass12345', **kwargs):
+    def _create(username='tester', role='management', password='pass12345', **kwargs):
         user = User.objects.create_user(username=username, password=password, **kwargs)
         Profile.objects.create(user=user, role=role)
         return user

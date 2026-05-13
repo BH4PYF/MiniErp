@@ -78,7 +78,7 @@ def user_save(request):
                 if not hasattr(user, 'profile'):
                     Profile.objects.create(user=user)
 
-                role = request.POST.get('role', 'clerk')
+                role = request.POST.get('role', 'management')
                 role_name_to_code = {role_name: role_code for role_code, role_name in Profile.ROLE_CHOICES}
                 role_code_to_name = {role_code: role_name for role_code, role_name in Profile.ROLE_CHOICES}
 
@@ -91,7 +91,7 @@ def user_save(request):
                         if group.name in role_name_to_code:
                             user.profile.role = role_name_to_code[group.name]
                         else:
-                            user.profile.role = 'clerk'
+                            user.profile.role = 'management'
                     except Group.DoesNotExist:
                         pass
                 else:
@@ -156,7 +156,7 @@ def user_delete(request, pk):
 @require_GET
 def user_detail_api(request, pk):
     user = get_object_or_404(User, pk=pk)
-    role = user.profile.role if hasattr(user, 'profile') else 'clerk'
+    role = user.profile.role if hasattr(user, 'profile') else 'management'
 
     subcontractor_id = ''
     if hasattr(user, 'profile') and role == 'subcontractor':

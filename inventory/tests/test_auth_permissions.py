@@ -35,7 +35,7 @@ class LoginViewTest(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.user = User.objects.create_user(username='testuser', password='testpass123')
-        Profile.objects.create(user=cls.user, role='clerk')
+        Profile.objects.create(user=cls.user, role='management')
 
     def test_login_page_loads(self):
         response = self.client.get(reverse('login'))
@@ -44,7 +44,7 @@ class LoginViewTest(TestCase):
 
     def test_login_success(self):
         user = User.objects.create_user(username='login_test_user', password='pass12345')
-        Profile.objects.create(user=user, role='clerk')
+        Profile.objects.create(user=user, role='management')
         response = self.client.post(reverse('login'), {
             'username': 'login_test_user', 'password': 'pass12345'
         })
@@ -91,8 +91,8 @@ class APIPermissionTest(TestCase):
         cls.admin.user_permissions.add(*project_permissions)
         cls.admin.user_permissions.add(*supplier_permissions)
 
-        cls.clerk = User.objects.create_user(username='clerk', password='pass12345')
-        Profile.objects.create(user=cls.clerk, role='clerk')
+        cls.management_user = User.objects.create_user(username='management', password='pass12345')
+        Profile.objects.create(user=cls.management_user, role='management')
 
         cls.supplier_user = User.objects.create_user(username='supplier', password='pass12345')
         Profile.objects.create(user=cls.supplier_user, role='supplier')
@@ -113,18 +113,13 @@ class APIPermissionTest(TestCase):
         data = response.json()
         self.assertEqual(data['name'], "螺纹钢")
 
-    def test_project_list_non_admin_rejected(self):
-        self.client.login(username='clerk', password='pass12345')
-        response = self.client.get(reverse('project_list'))
-        self.assertEqual(response.status_code, 302)
-
     def test_supplier_list_non_admin_rejected(self):
         self.client.login(username='supplier', password='pass12345')
         response = self.client.get(reverse('supplier_list'))
         self.assertEqual(response.status_code, 302)
 
     def test_user_list_non_admin_rejected(self):
-        self.client.login(username='clerk', password='pass12345')
+        self.client.login(username='management', password='pass12345')
         response = self.client.get(reverse('user_list'))
         self.assertEqual(response.status_code, 302)
 
@@ -150,7 +145,7 @@ class PermissionMatrixTest(TestCase):
         cls.project = Project.objects.create(name="权限测试项目", code="P_P01")
 
         cls.users = {}
-        for role in ('admin', 'material_dept', 'clerk', 'supplier'):
+        for role in ('admin', 'management', 'supplier'):
             user = User.objects.create_user(username=f'perm_{role}', password='pass12345')
             kwargs = {'user': user, 'role': role}
             if role == 'supplier':
@@ -180,40 +175,22 @@ class PermissionMatrixTest(TestCase):
         ]
         for url in admin_urls:
             self._check_access(url, 'admin', True)
-            self._check_access(url, 'clerk', False)
+            self._check_access(url, 'management', False)
             self._check_access(url, 'supplier', False)
 
     def test_delivery_access_by_role(self):
         url = reverse('delivery_list')
-        for role in ('admin', 'material_dept', 'supplier'):
+        for role in ('admin', 'supplier'):
             self._check_access(url, role, True)
-        self._check_access(url, 'clerk', False)
-
-    def test_delivery_detail_clerk_rejected(self):
-        plan = PurchasePlan.objects.create(
-            no="PP_PERM", project=self.project, material=self.material,
-            quantity=Decimal('10'), unit_price=Decimal('100'),
-            status=PurchasePlan.STATUS_PURCHASING, operator=self.users['admin'],
-        )
-        delivery = Delivery.objects.create(
-            no='DL_PERM', purchase_plan=plan,
-            actual_quantity=Decimal('10'), actual_unit_price=Decimal('100'),
-            shipping_method='special', supplier=self.supplier_obj,
-            status=Delivery.STATUS_SHIPPED,
-        )
-        self.client.login(username='perm_clerk', password='pass12345')
-        response = self.client.get(reverse('delivery_detail', args=[delivery.pk]))
-        self.assertEqual(response.status_code, 302)
 
     def test_inbound_access_by_role(self):
         url = reverse('inbound_list')
-        for role in ('admin', 'material_dept'):
-            self._check_access(url, role, True)
+        self._check_access(url, 'admin', True)
         self._check_access(url, 'supplier', False)
 
     def test_report_access_by_role(self):
         url = reverse('report_page')
-        for role in ('admin', 'material_dept', 'clerk'):
+        for role in ('admin', 'management'):
             self._check_access(url, role, True)
         self._check_access(url, 'supplier', False)
 

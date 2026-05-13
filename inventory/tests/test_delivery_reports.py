@@ -36,7 +36,7 @@ class DeliveryFlowTestBase(TestCase):
         Profile.objects.create(user=cls.supplier_user, role='supplier', supplier_info=cls.supplier)
 
         cls.clerk = User.objects.create_user(username='clerk_d', password='pass12345')
-        Profile.objects.create(user=cls.clerk, role='clerk')
+        Profile.objects.create(user=cls.clerk, role='management')
 
         cls.material = Material.objects.create(
             name="螺纹钢D", code="HRB_D", category=cls.category, unit="吨", spec="Φ25",

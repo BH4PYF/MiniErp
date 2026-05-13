@@ -17,7 +17,7 @@ from .utils import (
 logger = logging.getLogger('inventory')
 
 
-@role_required('admin', 'material_dept', 'clerk')
+@role_required('admin', 'management')
 def export_excel(request):
     export_type = request.GET.get('type', 'inventory')
     
