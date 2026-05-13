@@ -90,7 +90,7 @@
                     <a class="nav-link sidebar-link" data-bs-toggle="collapse" href="#subcontractMenu" role="button" aria-expanded="false">
                         <i class="bi bi-file-earmark-text"></i> 分包管理 <i class="bi bi-chevron-down float-end small"></i>
                     </a>
-                    <div class="collapse {% if 'budget' in request.resolver_match.url_name or 'contract' in request.resolver_match.url_name or 'measurement' in request.resolver_match.url_name or 'settlement' in request.resolver_match.url_name %}show{% endif %}" id="subcontractMenu">
+                    <div class="collapse {% if 'budget' in request.resolver_match.url_name or request.resolver_match.url_name|slice:':9' == 'contract_' or 'measurement' in request.resolver_match.url_name or 'settlement' in request.resolver_match.url_name %}show{% endif %}" id="subcontractMenu">
                         {% if request.user.profile.is_admin or request.user.profile.is_management %}
                         <a class="nav-link sidebar-link ps-4 {% if 'budget' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'budget_list' %}">
                             <i class="bi bi-cash-stack"></i> 分包预算
