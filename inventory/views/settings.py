@@ -62,6 +62,13 @@ def settings_page(request):
     system_version = 'V2.0.0'
     system_build = '20260414'
 
+    # 钉钉配置
+    dingtalk_push_mode = SystemSetting.get_setting('dingtalk_push_mode', 'off')
+    dingtalk_robot_token = SystemSetting.get_setting('dingtalk_robot_token', '')
+    dingtalk_app_key = SystemSetting.get_setting('dingtalk_app_key', '')
+    dingtalk_app_secret = SystemSetting.get_setting('dingtalk_app_secret', '')
+    dingtalk_agent_id = SystemSetting.get_setting('dingtalk_agent_id', '')
+
     return render(request, 'inventory/settings.html', {
         'company_name': company_name,
         'login_max_attempts': login_max_attempts,
@@ -72,6 +79,11 @@ def settings_page(request):
         'db_version': db_version,
         'system_version': system_version,
         'system_build': system_build,
+        'dingtalk_push_mode': dingtalk_push_mode,
+        'dingtalk_robot_token': dingtalk_robot_token,
+        'dingtalk_app_key': dingtalk_app_key,
+        'dingtalk_app_secret': dingtalk_app_secret,
+        'dingtalk_agent_id': dingtalk_agent_id,
     })
 
 
@@ -597,3 +609,63 @@ def clear_all_data(request):
             logger.exception('清空数据失败：未知错误')
             return JsonResponse({'error': '清空数据失败：系统异常，请重试'}, status=500)
     return JsonResponse({'error': '无效请求'}, status=400)
+
+
+@admin_required
+@require_POST
+def save_dingtalk_config(request):
+    """保存钉钉推送配置。"""
+    push_mode = request.POST.get('push_mode', 'off')
+    robot_token = request.POST.get('robot_token', '').strip()
+    app_key = request.POST.get('app_key', '').strip()
+    app_secret = request.POST.get('app_secret', '').strip()
+    agent_id = request.POST.get('agent_id', '').strip()
+
+    if push_mode not in ('robot', 'app', 'off'):
+        return JsonResponse({'error': '无效的推送模式'}, status=400)
+    if push_mode == 'robot' and not robot_token:
+        return JsonResponse({'error': '机器人模式需要填写 Webhook Token'}, status=400)
+    if push_mode == 'app' and not (app_key and app_secret and agent_id):
+        return JsonResponse({'error': '应用模式需要填写 AppKey、AppSecret 和 AgentId'}, status=400)
+
+    try:
+        SystemSetting.set_setting('dingtalk_push_mode', push_mode, '钉钉推送方式：robot/app/off')
+        SystemSetting.set_setting('dingtalk_robot_token', robot_token, '钉钉机器人 Webhook Token')
+        SystemSetting.set_setting('dingtalk_app_key', app_key, '钉钉自建应用 AppKey')
+        SystemSetting.set_setting('dingtalk_app_secret', app_secret, '钉钉自建应用 AppSecret')
+        SystemSetting.set_setting('dingtalk_agent_id', agent_id, '钉钉自建应用 AgentId')
+
+        SystemSetting.objects.filter(key='dingtalk_access_token').delete()
+        SystemSetting.objects.filter(key='dingtalk_token_expire').delete()
+
+        log_operation(request.user, '系统设置', 'update', f'更新钉钉推送配置（模式: {push_mode}）')
+        return JsonResponse({'success': True, 'message': '钉钉推送配置已保存'})
+    except (IntegrityError, DatabaseError) as e:
+        logger.exception('保存钉钉配置失败')
+        return JsonResponse({'error': '保存失败：数据库异常'}, status=500)
+
+
+@admin_required
+@require_POST
+def dingtalk_test(request):
+    """发送钉钉测试消息。"""
+    message = request.POST.get('message', '这是一条来自 MiniErp 的测试消息')
+
+    from ..services.dingtalk import DingTalkService, DingTalkError
+
+    push_mode = SystemSetting.get_setting('dingtalk_push_mode', 'off')
+    if push_mode == 'off':
+        return JsonResponse({'error': '钉钉推送未启用，请先在配置中启用'}, status=400)
+
+    try:
+        if push_mode == 'robot':
+            DingTalkService.send_robot_text(message)
+        elif push_mode == 'app':
+            DingTalkService.send_app_text(request.user.username, message)
+        return JsonResponse({'success': True, 'message': '测试消息发送成功'})
+    except DingTalkError as e:
+        logger.exception('钉钉测试消息发送失败')
+        return JsonResponse({'error': f'发送失败：{e}'}, status=500)
+    except Exception as e:
+        logger.exception('钉钉测试消息发送异常')
+        return JsonResponse({'error': f'发送异常：{e}'}, status=500)

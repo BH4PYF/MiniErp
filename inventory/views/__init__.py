@@ -36,6 +36,7 @@ from .settings import (
     add_custom_category,
     delete_category, save_system_settings, save_login_security_settings,
     backup_data, restore_data, clear_all_data, init_categories,
+    save_dingtalk_config, dingtalk_test,
 )
 from .users import (
     user_list, user_save, user_delete, user_detail_api,

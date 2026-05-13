@@ -122,6 +122,8 @@ urlpatterns = [
     path('api/settings/logs/', views.settings_logs_api, name='settings_logs_api'),
     path('settings/clear-all-data/', views.clear_all_data, name='clear_all_data'),
     path('settings/init-categories/', views.init_categories, name='init_categories'),
+    path('api/settings/save-dingtalk/', views.save_dingtalk_config, name='save_dingtalk_config'),
+    path('api/settings/dingtalk-test/', views.dingtalk_test, name='dingtalk_test'),
     # 清单分类相关
     path('api/subcontract-category/list/', views.settings.subcontract_category_list_api, name='subcontract_category_list_api'),
     path('settings/delete-subcontract-category/<int:pk>/', views.settings.delete_subcontract_category, name='delete_subcontract_category'),
