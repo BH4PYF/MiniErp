@@ -9,6 +9,6 @@ COPY . .
 
 ENV PYTHONUNBUFFERED=1
 
-EXPOSE 7777
+EXPOSE 6666
 
 CMD ["gunicorn", "--config", "deploy/gunicorn_config.py", "minierp.wsgi:application"]

@@ -102,7 +102,7 @@ server {
     }
     
     location / {
-        proxy_pass http://127.0.0.1:7777;
+        proxy_pass http://127.0.0.1:6666;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -169,7 +169,7 @@ echo -e "${YELLOW}启动 Gunicorn...${NC}"
 cd $APP_DIR
 nohup gunicorn \
     --workers 3 \
-    --bind 127.0.0.1:7777 \
+    --bind 127.0.0.1:6666 \
     --timeout 60 \
     --access-logfile logs/gunicorn_access.log \
     --error-logfile logs/gunicorn_error.log \

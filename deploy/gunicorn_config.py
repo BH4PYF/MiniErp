@@ -2,7 +2,7 @@ import os
 import multiprocessing
 
 # Gunicorn 配置 — 针对 I/O 密集型 Django 应用优化
-bind = "0.0.0.0:7777"
+bind = "0.0.0.0:6666"
 
 # worker 数量：I/O 密集型应用，2-4 × CPU 核数通常最优
 # 使用 gthread 后每个 worker 内部还有线程池，总数可适度降低
