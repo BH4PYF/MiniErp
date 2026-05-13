@@ -146,6 +146,11 @@ h6 { font-size: var(--text-sm); }
     box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
 }
 
+/* 侧边栏折叠瞬间展开，去掉过渡动画防闪 */
+#sidebar .collapsing {
+    transition: none !important;
+}
+
 .sidebar-link i {
     width: 20px;
     margin-right: 10px;
