@@ -65,6 +65,7 @@ def settings_page(request):
     # 钉钉配置
     dingtalk_push_mode = SystemSetting.get_setting('dingtalk_push_mode', 'off')
     dingtalk_robot_token = SystemSetting.get_setting('dingtalk_robot_token', '')
+    dingtalk_robot_secret = SystemSetting.get_setting('dingtalk_robot_secret', '')
     dingtalk_app_key = SystemSetting.get_setting('dingtalk_app_key', '')
     dingtalk_app_secret = SystemSetting.get_setting('dingtalk_app_secret', '')
     dingtalk_agent_id = SystemSetting.get_setting('dingtalk_agent_id', '')
@@ -81,6 +82,7 @@ def settings_page(request):
         'system_build': system_build,
         'dingtalk_push_mode': dingtalk_push_mode,
         'dingtalk_robot_token': dingtalk_robot_token,
+        'dingtalk_robot_secret': dingtalk_robot_secret,
         'dingtalk_app_key': dingtalk_app_key,
         'dingtalk_app_secret': dingtalk_app_secret,
         'dingtalk_agent_id': dingtalk_agent_id,
@@ -617,6 +619,7 @@ def save_dingtalk_config(request):
     """保存钉钉推送配置。"""
     push_mode = request.POST.get('push_mode', 'off')
     robot_token = request.POST.get('robot_token', '').strip()
+    robot_secret = request.POST.get('robot_secret', '').strip()
     app_key = request.POST.get('app_key', '').strip()
     app_secret = request.POST.get('app_secret', '').strip()
     agent_id = request.POST.get('agent_id', '').strip()
@@ -631,6 +634,7 @@ def save_dingtalk_config(request):
     try:
         SystemSetting.set_setting('dingtalk_push_mode', push_mode, '钉钉推送方式：robot/app/off')
         SystemSetting.set_setting('dingtalk_robot_token', robot_token, '钉钉机器人 Webhook Token')
+        SystemSetting.set_setting('dingtalk_robot_secret', robot_secret, '钉钉机器人签名密钥')
         SystemSetting.set_setting('dingtalk_app_key', app_key, '钉钉自建应用 AppKey')
         SystemSetting.set_setting('dingtalk_app_secret', app_secret, '钉钉自建应用 AppSecret')
         SystemSetting.set_setting('dingtalk_agent_id', agent_id, '钉钉自建应用 AgentId')

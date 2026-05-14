@@ -7,6 +7,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 
 from ..models import Project, Material, Supplier, InboundRecord
+from ..services.dingtalk import DingTalkService
 from .utils import (
     admin_required, inventory_required,
     is_ajax_request, log_operation, generate_no, parse_date, parse_positive_decimal,
@@ -111,6 +112,15 @@ def inbound_save(request):
             return JsonResponse({'error': str(e.message)}, status=400)
         log_operation(request.user, '入库管理', action,
                       f'{"新增" if action == "create" else "修改"}入库单 {obj.no} 材料:{obj.material.name} 数量:{obj.quantity}', obj.no)
+        if action == 'create':
+            DingTalkService.notify_if_enabled(
+                'inbound_created',
+                inbound_no=obj.no,
+                material_name=str(obj.material.name),
+                quantity=str(obj.quantity),
+                project_name=str(obj.project.name),
+                url=f'{request.scheme}://{request.get_host()}/inbound/',
+            )
         if is_ajax_request(request):
             return JsonResponse({'success': True, 'message': '保存成功'})
         return redirect('inbound_list')

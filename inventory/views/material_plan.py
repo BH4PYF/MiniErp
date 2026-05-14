@@ -8,6 +8,7 @@ from django.core.paginator import Paginator
 import decimal
 
 from .utils import purchase_plan_required, role_required, generate_no
+from ..services.dingtalk import DingTalkService
 
 # 材料计划列表
 @purchase_plan_required
@@ -329,7 +330,7 @@ def material_plan_save(request):
                     unit=unit,
                     unit_price=unit_price
                 )
-                
+
                 messages.success(request, '材料计划添加成功！')
         except Exception as e:
             messages.error(request, f'添加失败：{str(e)}')

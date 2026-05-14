@@ -5,6 +5,7 @@ from django.utils import timezone
 from decimal import Decimal
 from inventory.models import Settlement, SettlementItem, Contract, Project, Subcontractor, SubcontractList, Measurement
 from inventory.services.rate_limit_service import check_rate_limit
+from inventory.services.dingtalk import DingTalkService
 from .utils import create_excel_workbook, set_column_widths, make_excel_response, admin_management_required
 
 
@@ -112,7 +113,15 @@ def settlement_create(request):
                         )
                 
                 settlement.save()
-                
+
+            DingTalkService.notify_if_enabled(
+                'settlement_created',
+                settlement_no=settlement.code,
+                subcontractor_name=str(settlement.subcontractor),
+                amount=str(settlement.measurement_value),
+                url=f'{request.scheme}://{request.get_host()}/settlements/{settlement.pk}/',
+            )
+
             messages.success(request, '分包结算创建成功')
             return redirect('settlement_list')
         except (IntegrityError, DatabaseError) as e:

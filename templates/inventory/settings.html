@@ -243,6 +243,11 @@
                                 <input type="text" class="form-control" id="dingtalk_robot_token" name="robot_token" value="{{ dingtalk_robot_token }}" placeholder="粘贴 Webhook URL 中的 access_token 参数值">
                                 <small class="text-muted">钉钉群机器人 Webhook 地址中 access_token= 后面的部分</small>
                             </div>
+                            <div class="mb-3">
+                                <label for="dingtalk_robot_secret" class="form-label">签名密钥（Secret）</label>
+                                <input type="text" class="form-control" id="dingtalk_robot_secret" name="robot_secret" value="{{ dingtalk_robot_secret }}" placeholder="如机器人开启了加签，填写密钥">
+                                <small class="text-muted">创建机器人时设置的加签密钥，没有则留空</small>
+                            </div>
 
                             <hr>
                             <h6 class="text-muted mb-3">自建应用配置</h6>

@@ -8,6 +8,7 @@ from django.core.paginator import Paginator
 from django.utils import timezone
 
 from ..models import Project, Material, PurchasePlan, Supplier, MaterialPlan
+from ..services.dingtalk import DingTalkService
 from .utils import (
     purchase_plan_required, role_required,
     log_operation, generate_no,
@@ -165,6 +166,16 @@ def purchase_plan_save(request):
 
         log_operation(request.user, '采购计划', action,
                       f'{"新增" if action == "create" else "修改"}采购计划 {obj.no} 材料:{obj.material.name} 数量:{obj.quantity}', obj.no)
+        if action == 'create':
+            DingTalkService.notify_if_enabled(
+                'purchase_plan_created',
+                plan_no=obj.no,
+                material_name=str(obj.material.name),
+                quantity=str(obj.quantity),
+                project_name=str(obj.project.name),
+                supplier_name=str(obj.supplier.name) if obj.supplier else '未知',
+                url=f'{request.scheme}://{request.get_host()}/purchase-plans/',
+            )
         return JsonResponse({'success': True, 'message': '保存成功'})
     return redirect('purchase_plan_list')
 

@@ -22,6 +22,7 @@ from ..services.delivery_service import (
     confirm_ship as confirm_ship_service,
     quick_receive as quick_receive_service,
 )
+from ..services.dingtalk import DingTalkService
 
 logger = logging.getLogger('inventory')
 
@@ -183,6 +184,14 @@ def delivery_create(request):
 
         log_operation(request.user, '发货管理', 'create',
                       f'创建发货单 {delivery.no} 采购计划:{plan.no} 数量:{delivery.actual_quantity}', delivery.no)
+        DingTalkService.notify_if_enabled(
+            'delivery_created',
+            delivery_no=delivery.no,
+            supplier_name=str(delivery.supplier.name) if delivery.supplier else '未知',
+            material_name=str(plan.material.name),
+            quantity=str(delivery.actual_quantity),
+            url=f'{request.scheme}://{request.get_host()}/deliveries/{delivery.pk}/',
+        )
         if is_ajax_request(request):
             return JsonResponse({'success': True, 'message': '发货单创建成功'})
         return redirect('delivery_list')
@@ -445,6 +454,15 @@ def quick_receive_confirm(request):
             request.user, '快速收货', 'create',
             f'扫码收货 发货单:{delivery.no} -> 入库单:{inbound.no} 材料:{inbound.material.name} 数量:{inbound.quantity}',
             inbound.no
+        )
+
+        DingTalkService.notify_if_enabled(
+            'inbound_created',
+            inbound_no=inbound.no,
+            material_name=str(inbound.material.name),
+            quantity=str(inbound.quantity),
+            project_name=str(inbound.project.name),
+            url=f'{request.scheme}://{request.get_host()}/inbound/',
         )
 
         return JsonResponse({'success': True, 'message': '收货成功', 'inbound_no': inbound.no})

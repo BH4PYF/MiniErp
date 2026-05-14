@@ -1,3 +1,6 @@
+import base64
+import hashlib
+import hmac
 import json
 import logging
 import time
@@ -64,11 +67,22 @@ class DingTalkService:
 
     @staticmethod
     def _get_robot_webhook():
-        """获取机器人 webhook URL。"""
+        """获取机器人 webhook URL（含签名）。"""
         token = DingTalkService._get_setting('robot_token')
         if not token:
             raise DingTalkError('钉钉机器人配置不完整：缺少 Webhook Token')
-        return ROBOT_WEBHOOK_URL_TEMPLATE.format(token)
+        url = ROBOT_WEBHOOK_URL_TEMPLATE.format(token)
+
+        secret = DingTalkService._get_setting('robot_secret')
+        if secret:
+            timestamp = str(int(time.time() * 1000))
+            sign_str = timestamp + '\n' + secret
+            signature = base64.b64encode(
+                hmac.new(secret.encode(), sign_str.encode(), hashlib.sha256).digest()
+            ).decode()
+            url += f'&timestamp={timestamp}&sign={requests.utils.quote(signature)}'
+
+        return url
 
     @staticmethod
     def _call_robot(payload):
@@ -175,6 +189,32 @@ class DingTalkService:
         except requests.RequestException as e:
             raise DingTalkError(f'请求钉钉应用接口失败: {e}')
 
+    # ── 便捷调用（带开关检查，不抛异常） ──
+
+    @staticmethod
+    def notify_if_enabled(notification_type, **kwargs):
+        """检查推送配置是否启用，如是则发送通知。静默处理异常，不干扰主流程。"""
+        push_mode = DingTalkService._get_setting('push_mode')
+        if push_mode not in ('robot', 'app'):
+            return
+
+        method_map = {
+            'material_plan_review': DingTalkService.notify_material_plan_review,
+            'delivery_created': DingTalkService.notify_delivery_created,
+            'settlement_created': DingTalkService.notify_settlement_created,
+            'inbound_created': DingTalkService.notify_inbound_created,
+            'purchase_plan_created': DingTalkService.notify_purchase_plan_created,
+        }
+
+        method = method_map.get(notification_type)
+        if not method:
+            return
+
+        try:
+            method(**kwargs)
+        except Exception:
+            logger.exception('钉钉通知发送失败（已静默处理）: %s', notification_type)
+
     # ── 便捷通知方法 ──
 
     @staticmethod
@@ -218,6 +258,38 @@ class DingTalkService:
                 f'- **结算单号**: {settlement_no}\n'
                 f'- **分包商**: {subcontractor_name}\n'
                 f'- **金额**: {amount}\n'
+                f'- **状态**: 待审批\n\n'
+                f'> 请及时处理。\n'
+            ),
+        )
+
+    @staticmethod
+    def notify_inbound_created(inbound_no, material_name, quantity, project_name, url):
+        """入库通知。"""
+        DingTalkService.send_robot_markdown(
+            title='入库通知',
+            text=(
+                f'### 入库通知\n\n'
+                f'- **入库单号**: {inbound_no}\n'
+                f'- **材料**: {material_name}\n'
+                f'- **数量**: {quantity}\n'
+                f'- **项目**: {project_name}\n\n'
+                f'> 请确认入库信息。\n'
+            ),
+        )
+
+    @staticmethod
+    def notify_purchase_plan_created(plan_no, material_name, quantity, project_name, supplier_name, url):
+        """采购申请通知。"""
+        DingTalkService.send_robot_markdown(
+            title='采购申请通知',
+            text=(
+                f'### 采购申请通知\n\n'
+                f'- **采购单号**: {plan_no}\n'
+                f'- **材料**: {material_name}\n'
+                f'- **数量**: {quantity}\n'
+                f'- **项目**: {project_name}\n'
+                f'- **供应商**: {supplier_name}\n'
                 f'- **状态**: 待审批\n\n'
                 f'> 请及时处理。\n'
             ),
