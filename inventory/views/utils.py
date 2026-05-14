@@ -142,7 +142,7 @@ def combined_permission_required(perm=None, roles=None):
     
     Args:
         perm: Django权限字符串，如 'inventory.add_material'
-        roles: 角色列表，如 ['admin', 'material_dept']
+        roles: 角色列表，如 ['admin', 'management']
     """
     def decorator(view_func):
         @wraps(view_func)
@@ -477,18 +477,29 @@ def prometheus_metrics(request):
     """Prometheus监控端点（仅管理员可访问）"""
     if not request.user.is_staff:
         return HttpResponseForbidden('仅管理员可访问')
+
     from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram, generate_latest
-    from django.db import connection
+    from django.http import HttpResponse
+
+    from inventory.metrics import (
+        ERP_ORDERS_TOTAL,
+        ERP_ACTIVE_USERS,
+        ERP_DB_CONNECTIONS,
+        ERP_CELERY_QUEUE_LENGTH,
+        refresh_gauges,
+    )
+
+    # 刷新瞬时 Gauge 值（活跃用户、DB 连接、Celery 队列长度）
+    refresh_gauges()
 
     registry = CollectorRegistry()
 
+    # 系统级指标（每次请求重建，记录单个请求的维度）
     REQUEST_COUNT = Counter('minierp_requests_total', 'Total requests', ['method', 'path'], registry=registry)
     REQUEST_LATENCY = Histogram('minierp_request_duration_seconds', 'Request latency', ['method', 'path'], registry=registry)
-    DB_CONNECTIONS = Gauge('minierp_db_connections', 'Database connections', registry=registry)
     MEMORY_USAGE = Gauge('minierp_memory_usage_bytes', 'Memory usage', registry=registry)
 
     REQUEST_COUNT.labels(method=request.method, path=request.path).inc()
-    DB_CONNECTIONS.set(len(connection.queries))
 
     try:
         import psutil
@@ -497,7 +508,48 @@ def prometheus_metrics(request):
     except ImportError:
         pass
 
-    metrics = generate_latest(registry)
+    # ---- 关键：将全局业务指标迁移到本次请求的 registry 中 ----
+    # 如果不做这一步，业务指标只存在于默认 registry 中，/metrics/ 端点不会返回它们。
+    _migrate_metric(ERP_ORDERS_TOTAL, Counter, registry)
+    _migrate_metric(ERP_ACTIVE_USERS, Gauge, registry)
+    _migrate_metric(ERP_DB_CONNECTIONS, Gauge, registry)
+    _migrate_metric(ERP_CELERY_QUEUE_LENGTH, Gauge, registry)
 
-    from django.http import HttpResponse
+    metrics = generate_latest(registry)
     return HttpResponse(metrics, content_type='text/plain')
+
+
+def _migrate_metric(source, metric_cls, target_registry):
+    """
+    将 source 指标（通常注册在默认 CollectorRegistry 中）的当前样本值，
+    克隆一份到 target_registry 中，使用相同的 name、labels 和当前值。
+
+    这样业务指标就能和请求级指标一同出现在同一个 /metrics/ 输出中。
+    """
+    target = metric_cls(
+        source._name,
+        source._documentation,
+        labelnames=list(source._labelnames),
+        registry=target_registry,
+    )
+    if source._labelnames:
+        # 有标签的指标（如 Counter）：遍历所有样本
+        for sample in source.collect():
+            for s in sample.samples:
+                if s.name == source._name:
+                    labels = {ln: s.labels[ln] for ln in source._labelnames}
+                    value = s.value
+                    if metric_cls.__name__ == 'Counter':
+                        # Counter 只能 inc，不能 set — 用 _value 内部字段
+                        target.labels(**labels)._value.set(value)
+                    else:
+                        target.labels(**labels).set(value)
+    else:
+        # 无标签指标
+        for sample in source.collect():
+            if sample.name == source._name:
+                if metric_cls.__name__ == 'Counter':
+                    target._value.set(sample.samples[0].value)
+                else:
+                    target.set(sample.samples[0].value)
+                break

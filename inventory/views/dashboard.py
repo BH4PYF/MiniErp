@@ -62,7 +62,7 @@ def dashboard(request):
         response['Expires'] = '0'
         return response
 
-    # ------ 管理员/物资部仪表盘 (原有逻辑) ------
+    # ------ 管理员/管理层仪表盘 (原有逻辑) ------
     today = date.today()
     project_progress_id = request.GET.get('project_progress')
     project_material_id = request.GET.get('project_material')

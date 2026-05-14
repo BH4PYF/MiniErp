@@ -1,0 +1,46 @@
+{% extends 'mobile/base.html' %}
+
+{% block title %}入库记录 - {{ company_name|default:"材料管理系统" }}{% endblock %}
+
+{% block header_title %}入库记录{% endblock %}
+
+{% block content %}
+    <div class="mobile-card mb-3">
+        <small class="text-muted">最近 20 条入库记录</small>
+    </div>
+
+    <div class="mobile-card">
+        <div class="mobile-list">
+            {% for record in records %}
+            <div class="mobile-list-item">
+                <div class="mobile-list-item-left">
+                    <div class="mobile-list-item-title">{{ record.no }}</div>
+                    <div class="mobile-list-item-subtitle">
+                        {{ record.material.name }}{% if record.spec %} ({{ record.spec }}){% endif %}
+                    </div>
+                    <div class="mobile-list-item-meta">
+                        <span class="badge bg-light text-dark">{{ record.project.name|default:"—" }}</span>
+                        <span class="ms-2">{{ record.date|date:"Y-m-d" }}</span>
+                        <span class="ms-2">{{ record.quantity|floatformat:2 }} {{ record.spec|default:""|slice:":10" }}</span>
+                    </div>
+                    <div class="mobile-list-item-meta">
+                        <small class="text-muted">{{ record.supplier.name|default:"—" }}</small>
+                        {% if record.quality_status == 'unqualified' %}
+                        <span class="badge bg-danger ms-2">不合格</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="mobile-list-item-right text-end">
+                    <div class="fw-bold text-success">¥{{ record.total_amount|floatformat:2 }}</div>
+                    <small class="text-muted">¥{{ record.unit_price|floatformat:2 }}/单位</small>
+                </div>
+            </div>
+            {% empty %}
+            <div class="mobile-empty-state">
+                <i class="bi bi-box-arrow-in-down mobile-empty-state-icon"></i>
+                <div class="mobile-empty-state-text">暂无入库记录</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

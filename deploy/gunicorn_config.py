@@ -26,6 +26,13 @@ accesslog = os.path.join(os.path.dirname(__file__), 'logs', 'gunicorn_access.log
 errorlog = os.path.join(os.path.dirname(__file__), 'logs', 'gunicorn_error.log')
 loglevel = 'info'
 
+# 访问日志格式（包含请求处理时间、响应长度、referer、user-agent）
+access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" %(L)s'
+
+# 日志轮转：单文件最大 50 MB，保留 5 个历史文件
+max_bytes = 50 * 1024 * 1024  # 50 MB
+backup_count = 5
+
 # 进程名称
 proc_name = 'material-system'
 

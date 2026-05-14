@@ -35,7 +35,7 @@
 - **Excel 导出**：各类业务数据导出功能
 
 ### 系统管理
-- **用户管理**：多角色权限控制（管理员/物资部/材料员/供应商/分包商/管理层）
+- **用户管理**：多角色权限控制（管理员/管理层/供应商/分包商）
 - **系统设置**：导航栏标题定制、材料分类管理、登录限流配置
 - **权限控制**：基于角色的访问控制
 - **数据备份**：定时自动备份、手动备份支持
@@ -44,12 +44,10 @@
 ## 快速开始
 
 ### 环境要求
-- Python 3.10+
-- pip
+- Docker & Docker Compose
 - Git (可选)
-- SQLite (开发环境) / MySQL (生产环境)
 
-### 安装步骤
+### 安装步骤（Docker）
 
 #### 1. 获取项目
 ```bash
@@ -57,36 +55,30 @@ git clone https://github.com/BH4PYF/MiniErp.git
 cd MiniErp
 ```
 
-#### 2. 创建虚拟环境
-```bash
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# 或
-venv\Scripts\activate  # Windows
-```
-
-#### 3. 安装依赖
-```bash
-pip install -r requirements.txt
-```
-
-#### 4. 配置环境变量
+#### 2. 配置环境变量
 ```bash
 cp .env.example .env
-# 编辑 .env 文件修改配置（特别是 SECRET_KEY）
+# 编辑 .env 文件修改配置（特别是 SECRET_KEY 和数据库密码）
 ```
 
-#### 5. 初始化数据库
+#### 3. 启动服务
 ```bash
-python manage.py migrate
-python manage.py createsuperuser  # 创建管理员账号
+docker compose up -d
 ```
 
-#### 6. 运行开发服务器
+#### 4. 初始化数据库
 ```bash
-python manage.py runserver
+docker compose exec app python manage.py migrate
+docker compose exec app python manage.py createsuperuser  # 创建管理员账号
 ```
+
 访问 http://127.0.0.1:8000/
+
+服务包含：
+- **app**: Django 应用（Gunicorn）
+- **db**: PostgreSQL 16
+- **redis**: Redis 7
+- **celery**: Celery 异步任务 Worker
 
 ## 浏览器支持
 
@@ -339,6 +331,21 @@ pytest --cov=inventory --cov-report=html
 ```
 
 ## 更新日志
+
+### v2.1.1 (2026-05-12)
+- **安全加固**：硬编码密码替换为随机生成、9 处异常处理规范化
+- **Bug 修复**：serializer 移除不存在字段、dashboard 状态筛选修复、材料计划导出 Q 对象修复
+- **API 完善**：22 个模型 ViewSet/Serializer/FilterSet 全覆盖
+- **数据库优化**：8 个模型添加 11 个索引、SubcontractList.category 改为外键
+- **角色精简**：移除 material_dept 和 clerk 角色，简化为 4 个角色（admin/management/supplier/subcontractor）
+- **部署统一**：端口统一为 7777、新增移动端 (`/m/`)
+
+### v2.1.0 (2026-05-01)
+- **Docker 化部署**：docker compose 一键启动（PostgreSQL + Redis + Celery）
+- **基础设施升级**：Django 6.0 + PostgreSQL 替代 SQLite/MySQL
+- **登录限流**：Redis 缓存，5次/300秒
+- **慢请求监控**：>2s 记录到 deque 缓存
+- **生产安全**：HSTS/SSL/Cookie Secure/Sentry 集成
 
 ### v2.0 (2026-04-11)
 - **重大升级**：从材料管理系统升级为项目管理系统（MiniErp）

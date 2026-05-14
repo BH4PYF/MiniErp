@@ -1,0 +1,52 @@
+{% extends 'mobile/base.html' %}
+
+{% block title %}发货单 - {{ company_name|default:"材料管理系统" }}{% endblock %}
+
+{% block header_title %}发货单{% endblock %}
+
+{% block content %}
+    <div class="mobile-card mb-3">
+        <small class="text-muted">最近 20 条发货单</small>
+    </div>
+
+    <div class="mobile-card">
+        <div class="mobile-list">
+            {% for d in deliveries %}
+            <div class="mobile-list-item">
+                <div class="mobile-list-item-left">
+                    <div class="mobile-list-item-title">{{ d.no }}</div>
+                    <div class="mobile-list-item-subtitle">
+                        {{ d.purchase_plan.material.name|default:"—" }}
+                    </div>
+                    <div class="mobile-list-item-meta">
+                        <span class="badge bg-light text-dark">{{ d.purchase_plan.project.name|default:"—" }}</span>
+                        <span class="ms-2">{{ d.create_time|date:"Y-m-d" }}</span>
+                    </div>
+                    <div class="mobile-list-item-meta">
+                        <small class="text-muted">{{ d.supplier.name|default:"—" }}</small>
+                        <span class="ms-2">{{ d.actual_quantity|floatformat:2 }} 单位</span>
+                    </div>
+                </div>
+                <div class="mobile-list-item-right text-end">
+                    <div class="fw-bold text-primary">¥{{ d.actual_total_amount|floatformat:2 }}</div>
+                    <span class="badge
+                        {% if d.status == 'pending' %}bg-warning
+                        {% elif d.status == 'shipped' %}bg-info
+                        {% elif d.status == 'received' %}bg-success
+                        {% endif %}">
+                        {% if d.status == 'pending' %}待发货
+                        {% elif d.status == 'shipped' %}已发货
+                        {% elif d.status == 'received' %}已收货
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            {% empty %}
+            <div class="mobile-empty-state">
+                <i class="bi bi-truck mobile-empty-state-icon"></i>
+                <div class="mobile-empty-state-text">暂无发货单</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

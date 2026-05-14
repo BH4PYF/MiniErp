@@ -1,0 +1,91 @@
+{% extends 'mobile/base.html' %}
+
+{% block title %}材料列表 - {{ company_name|default:"材料管理系统" }}{% endblock %}
+
+{% block header_title %}材料列表{% endblock %}
+
+{% block header_right %}
+<a href="#search" class="mobile-header-icon" onclick="document.getElementById('searchBox').classList.toggle('d-none'); document.getElementById('searchInput').focus();">
+    <i class="bi bi-search"></i>
+</a>
+{% endblock %}
+
+{% block content %}
+    <!-- 搜索框 -->
+    <div class="mobile-card mb-3 d-none" id="searchBox">
+        <form method="get" action="{% url 'mobile_material_list' %}">
+            <div class="input-group">
+                <input type="text" name="q" id="searchInput" class="form-control" placeholder="搜索材料编号/名称/规格…" value="{{ q }}">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
+                {% if q %}<a href="{% url 'mobile_material_list' %}" class="btn btn-outline-secondary"><i class="bi bi-x"></i></a>{% endif %}
+            </div>
+        </form>
+    </div>
+
+    {% if q %}
+    <div class="mobile-card mb-3">
+        <small class="text-muted">搜索 "{{ q }}" — 共 {{ page.paginator.count }} 条结果</small>
+    </div>
+    {% endif %}
+
+    <!-- 材料列表 -->
+    <div class="mobile-card">
+        <div class="mobile-list">
+            {% for material in page %}
+            <div class="mobile-list-item">
+                <div class="mobile-list-item-left">
+                    <div class="mobile-list-item-title">{{ material.name }}</div>
+                    <div class="mobile-list-item-subtitle">
+                        {{ material.code }}{% if material.spec %} | {{ material.spec }}{% endif %}
+                        {% if material.category %} | {{ material.category.name }}{% endif %}
+                    </div>
+                    <div class="mobile-list-item-meta">
+                        <span class="badge bg-light text-dark">{{ material.get_unit_display }}</span>
+                        <span class="ms-2">¥{{ material.standard_price|floatformat:2 }}</span>
+                    </div>
+                </div>
+                <div class="mobile-list-item-right">
+                    <i class="bi bi-chevron-right text-muted"></i>
+                </div>
+            </div>
+            {% empty %}
+            <div class="mobile-empty-state">
+                <i class="bi bi-box mobile-empty-state-icon"></i>
+                <div class="mobile-empty-state-text">暂无材料</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 分页 -->
+    {% if page.paginator.num_pages > 1 %}
+    <div class="mobile-card">
+        <nav>
+            <ul class="pagination justify-content-center mb-0">
+                {% if page.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page.previous_page_number }}{% if q %}&q={{ q }}{% endif %}"><i class="bi bi-chevron-left"></i></a></li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-left"></i></span></li>
+                {% endif %}
+                <li class="page-item disabled"><span class="page-link">{{ page.number }}/{{ page.paginator.num_pages }}</span></li>
+                {% if page.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page.next_page_number }}{% if q %}&q={{ q }}{% endif %}"><i class="bi bi-chevron-right"></i></a></li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-right"></i></span></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 若搜索词存在，默认展开搜索框
+    {% if q %}
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('searchBox').classList.remove('d-none');
+    });
+    {% endif %}
+</script>
+{% endblock %}

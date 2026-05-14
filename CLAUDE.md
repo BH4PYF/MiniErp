@@ -6,7 +6,7 @@
 
 **业务模块**: 项目管理 → 合同管理 → 分包管理 → 进度计量 → 分包结算 → 材料管理(计划/采购/发货/入库) → 统计分析 → 系统管理
 
-**用户角色**: admin(管理员) / management(管理层) / material_dept(物资部) / clerk(材料员) / supplier(供应商) / subcontractor(分包商)
+**用户角色**: admin(管理员) / management(管理层) / supplier(供应商) / subcontractor(分包商)
 
 ## 技术架构
 
@@ -52,7 +52,7 @@
 
 ### 安全加固
 - 硬编码密码 → `secrets.token_urlsafe(8)` 随机生成
-- ROLE_CHOICES 补全 6 个角色
+- ROLE_CHOICES 补全 4 个角色
 - 6 个视图模块加 `admin_management_required` 权限校验
 - 9 处 `except Exception` → `except (IntegrityError, DatabaseError)`
 

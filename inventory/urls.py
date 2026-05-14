@@ -13,6 +13,9 @@ urlpatterns = [
     # 移动端
     path('m/', mobile.mobile_dashboard, name='mobile_dashboard'),
     path('m/report/', mobile.mobile_report, name='mobile_report'),
+    path('m/materials/', mobile.mobile_material_list, name='mobile_material_list'),
+    path('m/inbound/', mobile.mobile_inbound_list, name='mobile_inbound_list'),
+    path('m/delivery/', mobile.mobile_delivery_list, name='mobile_delivery_list'),
     # 项目管理
     path('projects/', views.project_list, name='project_list'),
     path('projects/save/', views.project_save, name='project_save'),

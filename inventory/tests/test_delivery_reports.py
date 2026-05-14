@@ -24,8 +24,8 @@ class DeliveryFlowTestBase(TestCase):
         cls.admin = User.objects.create_user(username='admin_delivery', password='pass12345')
         Profile.objects.create(user=cls.admin, role='admin')
 
-        cls.material_dept = User.objects.create_user(username='mat_dept', password='pass12345')
-        Profile.objects.create(user=cls.material_dept, role='management')
+        cls.mgmt_user = User.objects.create_user(username='mat_dept', password='pass12345')
+        Profile.objects.create(user=cls.mgmt_user, role='management')
 
         cls.category = Category.objects.create(name="钢材", code="STEEL_D")
         cls.supplier = Supplier.objects.create(
@@ -35,8 +35,8 @@ class DeliveryFlowTestBase(TestCase):
         cls.supplier_user = User.objects.create_user(username='supplier_d', password='pass12345')
         Profile.objects.create(user=cls.supplier_user, role='supplier', supplier_info=cls.supplier)
 
-        cls.clerk = User.objects.create_user(username='clerk_d', password='pass12345')
-        Profile.objects.create(user=cls.clerk, role='management')
+        cls.mgmt_user2 = User.objects.create_user(username='clerk_d', password='pass12345')
+        Profile.objects.create(user=cls.mgmt_user2, role='management')
 
         cls.material = Material.objects.create(
             name="螺纹钢D", code="HRB_D", category=cls.category, unit="吨", spec="Φ25",
