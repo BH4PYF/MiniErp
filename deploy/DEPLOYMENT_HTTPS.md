@@ -124,6 +124,25 @@ sudo systemctl disable --now postgresql redis-server minierp 2>/dev/null
 sudo systemctl mask postgresql
 ```
 
+## Nginx 看门狗
+
+每分钟检查 Nginx 运行状态，异常时自动拉起。脚本已内置日志轮转（10MB）。
+
+```bash
+# 手动安装（部署时执行一次）
+chmod +x scripts/nginx_watchdog.sh
+(crontab -l 2>/dev/null; echo '* * * * * /home/abc/MiniErp/scripts/nginx_watchdog.sh') | crontab -
+```
+
+三重保护：
+- `systemd Restart=always` — 进程崩溃 5 秒内自动重启
+- cron 看门狗 — 被手动停止 / 启动失败时每分钟拉起
+- `systemctl enable nginx` — 服务器重启后自动启动
+
+| 日志 | 路径 |
+|------|------|
+| 看门狗 | `deploy/logs/nginx_watchdog.log` |
+
 ## 日志位置
 
 | 日志 | 路径 |
@@ -142,6 +161,7 @@ sudo systemctl mask postgresql
 | `deploy/gunicorn_config.py` | Gunicorn 配置 |
 | `scripts/backup_db.sh` | 数据库备份 |
 | `scripts/backup_files.sh` | 文件备份 |
+| `scripts/nginx_watchdog.sh` | Nginx 看门狗 |
 
 ---
 

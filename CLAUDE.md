@@ -40,6 +40,7 @@
 | `minierp/settings.py` | 基础配置（自动加载 settings_dev/prod/test 覆盖） |
 | `minierp/middleware.py` | 性能分析 + 慢请求监控 |
 | `deploy/` | 部署脚本（gunicorn_config.py + nginx conf + systemd） |
+| `scripts/` | 运维脚本（备份 + Nginx 看门狗） |
 | `templates/` | Django 模板（含 mobile/ 移动端） |
 | `静态文件` | static/（开发）+ staticfiles/（生产 collectstatic） |
 
