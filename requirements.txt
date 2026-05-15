@@ -70,3 +70,6 @@ pytest-django==4.12.0
 # 系统监控（Prometheus监控端点使用）
 psutil>=5.9.0
 prometheus_client>=0.21.0
+
+# HTTP 请求（钉钉推送等）
+requests>=2.31.0

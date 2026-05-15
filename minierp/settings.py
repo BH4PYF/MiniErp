@@ -65,18 +65,9 @@ if DEBUG:
     # 开发环境：允许所有主机访问
     ALLOWED_HOSTS = ['*']
 else:
-    # 生产环境：只允许指定的域名和IP访问
-    ALLOWED_HOSTS = [
-        'erp.sdyhjzgc.com',
-        'www.erp.sdyhjzgc.com',
-        'localhost',
-        '127.0.0.1',
-        '::1',
-    ]
-    # 从环境变量读取额外的允许主机
-    additional_hosts = os.getenv('ALLOWED_HOSTS', '')
-    if additional_hosts:
-        ALLOWED_HOSTS.extend([host.strip() for host in additional_hosts.split(',') if host.strip()])
+    # 生产环境：从环境变量读取允许的主机
+    env_hosts = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1')
+    ALLOWED_HOSTS = [host.strip() for host in env_hosts.split(',') if host.strip()]
 
 # 内部 IP 列表（用于 django-debug-toolbar）
 INTERNAL_IPS = [
@@ -312,15 +303,16 @@ TRUSTED_PROXIES = [
     if ip.strip()
 ]
 
-# 可信源列表，用于 CSRF 验证
+# 可信源列表，从环境变量读取（逗号分隔），默认包含本地地址
+_csrf_env = os.getenv('CSRF_TRUSTED_ORIGINS', '')
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost',
     'https://localhost',
     'http://127.0.0.1',
     'https://127.0.0.1',
-    'https://erp.sdyhjzgc.com',
-    'http://erp.sdyhjzgc.com',
 ]
+if _csrf_env:
+    CSRF_TRUSTED_ORIGINS.extend([h.strip() for h in _csrf_env.split(',') if h.strip()])
 
 # ---------- 测试环境优化 ----------
 # 使用快速密码哈希器，将每次 authenticate() 从 ~1s 降至 ~0.001s
@@ -347,6 +339,7 @@ if not DEBUG and not TESTING:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_SSL_REDIRECT = True
+    SECURE_REDIRECT_EXEMPT = [r'^health/']
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True

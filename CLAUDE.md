@@ -2,7 +2,7 @@
 
 ## 项目概览
 
-施工企业项目全流程管理系统 V2.0，Django 6.0 + PostgreSQL + Redis + Celery，部署在 erp.sdyhjzgc.com (Gunicorn:7777 + Nginx)。
+施工企业项目全流程管理系统 V2.0，Django 6.0 + PostgreSQL + Redis + Celery，部署在 your-domain.com (Gunicorn:6666 + Nginx，Docker Compose 管理)。
 
 **业务模块**: 项目管理 → 合同管理 → 分包管理 → 进度计量 → 分包结算 → 材料管理(计划/采购/发货/入库) → 统计分析 → 系统管理
 

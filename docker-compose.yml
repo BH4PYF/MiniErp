@@ -6,7 +6,7 @@ services:
     container_name: postgres-db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Liyifeiniuniu1027-
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
       POSTGRES_DB: material_system
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -44,7 +44,7 @@ services:
       - redis
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:6666/health/ || exit 1"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:6666/health/')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -69,6 +69,12 @@ services:
     depends_on:
       - db
       - redis
+    healthcheck:
+      test: ["CMD", "celery", "-A", "minierp", "inspect", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     restart: unless-stopped
 
 volumes:
