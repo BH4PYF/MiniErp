@@ -281,10 +281,10 @@ def export_measurement_detail(request, pk):
     ws.cell(row=9, column=2, value=float(measurement.cumulative_value) if measurement.cumulative_value else 0)
     
     row = 11
-    for item in measurement.measurement_items.all():
+    for item in measurement.measurement_items.select_related('subcontract_list__category').all():
         ws.cell(row=row, column=1, value=item.item_order)
         ws.cell(row=row, column=2, value=item.subcontract_list.name)
-        ws.cell(row=row, column=3, value=item.subcontract_list.category or '')
+        ws.cell(row=row, column=3, value=item.subcontract_list.category.category_name if item.subcontract_list.category else '')
         ws.cell(row=row, column=4, value=item.subcontract_list.construction_params or '')
         ws.cell(row=row, column=5, value=item.subcontract_list.unit or '')
         ws.cell(row=row, column=6, value=float(item.previous_quantity) if item.previous_quantity else 0)

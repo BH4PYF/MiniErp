@@ -1,9 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db import DatabaseError, IntegrityError, transaction
+from django.db.models import Sum
 from django.utils import timezone
 from decimal import Decimal
-from inventory.models import Contract, ContractItem, Project, Subcontractor, SubcontractList
+from inventory.models import Contract, ContractItem, Measurement, Project, Subcontractor, SubcontractList
 from inventory.services.rate_limit_service import check_rate_limit
 from .utils import create_excel_workbook, set_column_widths, make_excel_response, admin_management_required
 
@@ -208,16 +209,34 @@ def export_contracts(request):
     headers = ['合同编号', '合同名称', '项目名称', '分包商', '合同总额', '实际产值', '完成进度(%)']
     wb, ws, _ = create_excel_workbook('分包合同列表', headers)
     
-    contracts = Contract.objects.select_related('project', 'subcontractor').all()
+    contracts = list(Contract.objects.select_related('project', 'subcontractor').all())
+    contract_ids = [c.id for c in contracts]
+    contract_totals = dict(
+        ContractItem.objects.filter(contract_id__in=contract_ids)
+        .values_list('contract_id')
+        .annotate(total=Sum('total_amount'))
+    )
+    measured_totals = dict(
+        Measurement.objects.filter(contract_id__in=contract_ids)
+        .values_list('contract_id')
+        .annotate(total=Sum('current_value'))
+    )
+
     row = 2
     for c in contracts:
+        contract_total = contract_totals.get(c.id) or Decimal('0')
+        actual_value = measured_totals.get(c.id) or Decimal('0')
+        if contract_total > 0:
+            progress = min(100, round((actual_value / contract_total) * 100, 1))
+        else:
+            progress = 0
         ws.cell(row=row, column=1, value=c.code)
         ws.cell(row=row, column=2, value=c.name)
         ws.cell(row=row, column=3, value=c.project.name if c.project else '')
         ws.cell(row=row, column=4, value=c.subcontractor.name if c.subcontractor else '')
-        ws.cell(row=row, column=5, value=float(c.get_contract_total()))
-        ws.cell(row=row, column=6, value=float(c.get_actual_value()))
-        ws.cell(row=row, column=7, value=float(c.get_completion_progress()))
+        ws.cell(row=row, column=5, value=float(contract_total))
+        ws.cell(row=row, column=6, value=float(actual_value))
+        ws.cell(row=row, column=7, value=float(progress))
         row += 1
     
     set_column_widths(ws, [15, 25, 20, 20, 15, 15, 12])
@@ -249,10 +268,10 @@ def export_contract_detail(request, pk):
     ws.cell(row=7, column=2, value=float(contract.get_actual_value()))
     
     row = 9
-    for item in contract.contract_items.all():
+    for item in contract.contract_items.select_related('subcontract_list__category').all():
         ws.cell(row=row, column=1, value=item.item_order)
         ws.cell(row=row, column=2, value=item.subcontract_list.name)
-        ws.cell(row=row, column=3, value=item.subcontract_list.category or '')
+        ws.cell(row=row, column=3, value=item.subcontract_list.category.category_name if item.subcontract_list.category else '')
         ws.cell(row=row, column=4, value=item.subcontract_list.construction_params or '')
         ws.cell(row=row, column=5, value=item.subcontract_list.unit or '')
         ws.cell(row=row, column=6, value=float(item.quantity) if item.quantity else 0)

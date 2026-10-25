@@ -4,8 +4,8 @@ import logging
 
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
-from django.db.models import Sum
-from django.db.models.functions import ExtractYear, ExtractMonth
+from django.db.models import Count, Sum
+from django.db.models.functions import ExtractYear, ExtractMonth, TruncMonth
 from django.views.decorators.http import require_GET
 from django.core.cache import cache
 
@@ -384,37 +384,35 @@ def report_project_subcontract(request):
             contracts = contracts.filter(created_at__date__lte=date_to)
             settlements = settlements.filter(period_end__lte=date_to)
 
-        # 计算合同总额
-        contract_total = Decimal('0')
-        try:
-            for contract in contracts:
-                try:
-                    contract_total += contract.get_contract_total()
-                except (ValueError, AttributeError) as e:
-                    logger.warning(f"合同 {contract.id} 金额计算错误: {e}")
-        except Exception as e:
-            logger.error(f"合同总额计算失败: {e}")
-        # 计算结算总额
-        settlement_total = Decimal('0')
-        try:
-            settlement_total = settlements.aggregate(total=Sum('final_amount'))['total'] or Decimal('0')
-        except (ValueError, TypeError) as e:
-            logger.error(f"结算总额计算错误: {e}")
-            settlement_total = Decimal('0')
-
-        # 按分包商分组统计
+        # 按分包商分组统计（数据库聚合，避免逐条调用模型方法）
         subcontractor_stats = {}
-        for contract in contracts:
-            sub_name = contract.subcontractor.name
-            if sub_name not in subcontractor_stats:
-                subcontractor_stats[sub_name] = {'contract': Decimal('0'), 'settlement': Decimal('0')}
-            subcontractor_stats[sub_name]['contract'] += contract.get_contract_total()
+        contract_total = Decimal('0')
+        contract_rows = (
+            contracts.values('subcontractor__name')
+            .annotate(total=Sum('contract_items__total_amount'))
+        )
+        for row in contract_rows:
+            amount = row['total'] or Decimal('0')
+            contract_total += amount
+            stats = subcontractor_stats.setdefault(
+                row['subcontractor__name'],
+                {'contract': Decimal('0'), 'settlement': Decimal('0')},
+            )
+            stats['contract'] += amount
 
-        for settlement in settlements:
-            sub_name = settlement.contract.subcontractor.name
-            if sub_name not in subcontractor_stats:
-                subcontractor_stats[sub_name] = {'contract': Decimal('0'), 'settlement': Decimal('0')}
-            subcontractor_stats[sub_name]['settlement'] += settlement.final_amount or Decimal('0')
+        settlement_total = Decimal('0')
+        settlement_rows = (
+            settlements.values('contract__subcontractor__name')
+            .annotate(total=Sum('final_amount'))
+        )
+        for row in settlement_rows:
+            amount = row['total'] or Decimal('0')
+            settlement_total += amount
+            stats = subcontractor_stats.setdefault(
+                row['contract__subcontractor__name'],
+                {'contract': Decimal('0'), 'settlement': Decimal('0')},
+            )
+            stats['settlement'] += amount
 
         # 转换为列表格式
         report_data = []
@@ -499,28 +497,30 @@ def report_subcontractor_analysis(request):
             contracts = contracts.filter(created_at__date__lte=date_to)
             settlements = settlements.filter(period_end__lte=date_to)
 
-        # 按项目分组统计
+        # 按项目分组统计（数据库聚合，避免逐条调用模型方法）
         project_stats = {}
-        try:
-            for contract in contracts:
-                try:
-                    project_name = f"{contract.project.code} - {contract.project.name}"
-                    if project_name not in project_stats:
-                        project_stats[project_name] = {'contract': Decimal('0'), 'settlement': Decimal('0')}
-                    project_stats[project_name]['contract'] += contract.get_contract_total()
-                except (ValueError, AttributeError) as e:
-                    logger.warning(f"合同 {contract.id} 项目分组统计错误: {e}")
 
-            for settlement in settlements:
-                try:
-                    project_name = f"{settlement.contract.project.code} - {settlement.contract.project.name}"
-                    if project_name not in project_stats:
-                        project_stats[project_name] = {'contract': Decimal('0'), 'settlement': Decimal('0')}
-                    project_stats[project_name]['settlement'] += settlement.final_amount or Decimal('0')
-                except (ValueError, AttributeError) as e:
-                    logger.warning(f"结算 {settlement.id} 项目分组统计错误: {e}")
-        except Exception as e:
-            logger.error(f"项目分组统计失败: {e}")
+        contract_rows = (
+            contracts.values('project__code', 'project__name')
+            .annotate(total=Sum('contract_items__total_amount'))
+        )
+        for row in contract_rows:
+            project_name = f"{row['project__code']} - {row['project__name']}"
+            stats = project_stats.setdefault(
+                project_name, {'contract': Decimal('0'), 'settlement': Decimal('0')},
+            )
+            stats['contract'] += row['total'] or Decimal('0')
+
+        settlement_rows = (
+            settlements.values('contract__project__code', 'contract__project__name')
+            .annotate(total=Sum('final_amount'))
+        )
+        for row in settlement_rows:
+            project_name = f"{row['contract__project__code']} - {row['contract__project__name']}"
+            stats = project_stats.setdefault(
+                project_name, {'contract': Decimal('0'), 'settlement': Decimal('0')},
+            )
+            stats['settlement'] += row['total'] or Decimal('0')
 
         # 转换为列表格式
         report_data = []
@@ -600,23 +600,21 @@ def report_monthly_subcontract(request):
         if date_to:
             settlements = settlements.filter(period_end__lte=date_to)
 
-        # 按月份分组
-        monthly_data = {}
-        for settlement in settlements:
-            month_key = settlement.period_end.strftime('%Y-%m')
-            if month_key not in monthly_data:
-                monthly_data[month_key] = {'amount': Decimal('0'), 'count': 0}
-            monthly_data[month_key]['amount'] += settlement.final_amount or Decimal('0')
-            monthly_data[month_key]['count'] += 1
-
-        # 转换为列表并排序
-        report_data = []
-        for month, data in sorted(monthly_data.items()):
-            report_data.append({
-                'month': month,
-                'amount': data['amount'],
-                'count': data['count'],
-            })
+        # 按月份分组（数据库聚合）
+        monthly_rows = (
+            settlements.annotate(month=TruncMonth('period_end'))
+            .values('month')
+            .annotate(amount=Sum('final_amount'), count=Count('id'))
+            .order_by('month')
+        )
+        report_data = [
+            {
+                'month': row['month'].strftime('%Y-%m'),
+                'amount': row['amount'] or Decimal('0'),
+                'count': row['count'],
+            }
+            for row in monthly_rows
+        ]
 
         # 计算总计
         total_amount = sum(item['amount'] for item in report_data)

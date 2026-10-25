@@ -2,7 +2,7 @@ from django.urls import path
 from . import views
 from .views import tasks as task_views
 from .views import users as user_views
-from .views import subcontractor, subcontract_list, budget, contract, measurement, settlement, material_plan, report, mobile
+from .views import subcontractor, subcontract_list, budget, contract, measurement, settlement, material_plan, report, mobile, recycle_bin
 
 urlpatterns = [
     # 登录/登出
@@ -100,6 +100,9 @@ urlpatterns = [
     path('api/backup/', task_views.backup_data_async, name='backup_data_async'),
     # 操作日志
     path('logs/', user_views.log_list, name='log_list'),
+    # 回收站（管理员）
+    path('recycle-bin/', recycle_bin.recycle_bin, name='recycle_bin'),
+    path('recycle-bin/<str:model_key>/<int:pk>/restore/', recycle_bin.recycle_bin_restore, name='recycle_bin_restore'),
     # 性能监控
     path('performance/', views.performance_dashboard, name='performance_dashboard'),
     path('api/performance/stats/', views.api_performance_stats, name='api_performance_stats'),
@@ -187,6 +190,8 @@ urlpatterns = [
     path('settlements/<int:pk>/export/', settlement.export_settlement_detail, name='export_settlement_detail'),
     path('api/measurements-by-contract/', settlement.get_measurements_by_contract, name='measurements_by_contract'),
     path('api/measurement-items/', settlement.get_measurement_items, name='measurement_items'),
-    # Prometheus监控端点
-    path('metrics/', views.utils.prometheus_metrics, name='prometheus_metrics'),
+    # Prometheus /metrics 端点已于 2026-10-04 移除：
+    # 该端点由 @login_required + is_staff 保护，Prometheus 无法通过认证；
+    # 加之 SECURE_SSL_REDIRECT 会把 http 抓取 301 到 https（gunicorn 只监听明文），
+    # 故自 2026-04 加入以来从未成功抓取过一次，Prometheus 中 erp_* 时序长期为 0。
 ]

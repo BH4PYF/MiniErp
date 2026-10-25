@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}回收站{% endblock %}
+{% block page_title %}回收站{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h5><i class="bi bi-trash3"></i> 回收站 <span class="badge bg-secondary">{{ total_deleted }}</span></h5>
+</div>
+
+<div class="filter-bar">
+    <div class="d-flex flex-wrap gap-1 mb-2">
+        {% for key, label, count in counts %}
+        <a class="btn btn-sm {% if key == selected_key %}btn-primary{% else %}btn-outline-secondary{% endif %}"
+           href="?model={{ key }}{% if q %}&q={{ q|urlencode }}{% endif %}">
+            {{ label }}{% if count %} <span class="badge bg-light text-dark">{{ count }}</span>{% endif %}
+        </a>
+        {% endfor %}
+    </div>
+    <form method="get" class="row g-2 align-items-end">
+        <input type="hidden" name="model" value="{{ selected_key }}">
+        <div class="col-auto">
+            <label class="form-label small mb-0">搜索{{ selected_label }}</label>
+            <input type="text" class="form-control form-control-sm" name="q" value="{{ q }}" placeholder="编号 / 名称">
+        </div>
+        <div class="col-auto mt-auto">
+            <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i> 查询</button>
+            {% if q %}
+            <a class="btn btn-sm btn-outline-secondary" href="?model={{ selected_key }}">清除</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover table-sm mb-0">
+            <thead>
+                <tr><th style="width:45%">记录</th><th>删除时间</th><th style="width:120px">操作</th></tr>
+            </thead>
+            <tbody>
+            {% for item in page_obj %}
+            <tr id="recycle-row-{{ item.pk }}">
+                <td>
+                    {{ item }}
+                    {% if item.spec %}<small class="text-muted d-block">{{ item.spec }}</small>{% endif %}
+                </td>
+                <td><small>{{ item.deleted_at|date:"Y-m-d H:i:s" }}</small></td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-outline-success"
+                            onclick="restoreItem('{{ selected_key }}', {{ item.pk }}, '{{ item|escapejs }}')">
+                        <i class="bi bi-arrow-counterclockwise"></i> 恢复
+                    </button>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="text-center text-muted py-4">
+                {% if selected_key %}没有已删除的{{ selected_label }}{% else %}回收站为空{% endif %}
+            </td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if page_obj and page_obj.has_other_pages %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?model={{ selected_key }}{% if q %}&q={{ q|urlencode }}{% endif %}&page={{ page_obj.previous_page_number }}">上一页</a>
+        </li>
+        {% endif %}
+        {% for i in page_obj.paginator.page_range %}
+        {% if page_obj.number == i %}
+        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+        {% else %}
+        <li class="page-item">
+            <a class="page-link" href="?model={{ selected_key }}{% if q %}&q={{ q|urlencode }}{% endif %}&page={{ i }}">{{ i }}</a>
+        </li>
+        {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?model={{ selected_key }}{% if q %}&q={{ q|urlencode }}{% endif %}&page={{ page_obj.next_page_number }}">下一页</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function restoreItem(modelKey, pk, label) {
+    showConfirm('确定要恢复“' + label + '”吗？', function () {
+        fetch('/recycle-bin/' + modelKey + '/' + pk + '/restore/', {
+            method: 'POST',
+            headers: {'X-CSRFToken': csrftoken, 'X-Requested-With': 'XMLHttpRequest'},
+        }).then(function (resp) {
+            return resp.json();
+        }).then(function (data) {
+            if (data.success) {
+                location.reload();
+            } else {
+                showMsg(data.error || '恢复失败');
+            }
+        }).catch(function () {
+            showMsg('恢复失败，请稍后重试');
+        });
+    });
+}
+</script>
+{% endblock %}

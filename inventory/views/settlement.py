@@ -289,10 +289,10 @@ def export_settlement_detail(request, pk):
     ws.cell(row=10, column=2, value=float(settlement.final_amount) if settlement.final_amount else 0)
     
     row = 12
-    for item in settlement.settlement_items.all():
+    for item in settlement.settlement_items.select_related('subcontract_list__category').all():
         ws.cell(row=row, column=1, value=item.item_order)
         ws.cell(row=row, column=2, value=item.subcontract_list.name)
-        ws.cell(row=row, column=3, value=item.subcontract_list.category or '')
+        ws.cell(row=row, column=3, value=item.subcontract_list.category.category_name if item.subcontract_list.category else '')
         ws.cell(row=row, column=4, value=item.subcontract_list.construction_params or '')
         ws.cell(row=row, column=5, value=item.subcontract_list.unit or '')
         ws.cell(row=row, column=6, value=float(item.measurement_quantity) if item.measurement_quantity else 0)

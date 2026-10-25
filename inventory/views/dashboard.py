@@ -5,7 +5,7 @@ from django.core.cache import cache
 from django.db.models import Sum, Count
 from django.shortcuts import render, redirect
 
-from ..models import Project, Material, Supplier, InboundRecord, Contract, Measurement, Settlement, Budget, BudgetItem, MaterialPlan, PurchasePlan, Delivery, Subcontractor
+from ..models import Project, Material, Supplier, InboundRecord, Contract, ContractItem, Measurement, Settlement, Budget, BudgetItem, MaterialPlan, PurchasePlan, Delivery, Subcontractor
 
 
 @login_required
@@ -19,11 +19,26 @@ def dashboard(request):
             is_deleted=False,
         ).select_related('project', 'subcontractor')
 
+        contract_ids = list(sub_contracts.values_list('id', flat=True))
+        contract_totals = dict(
+            ContractItem.objects.filter(contract_id__in=contract_ids)
+            .values_list('contract_id')
+            .annotate(total=Sum('total_amount'))
+        )
+        measured_totals = dict(
+            Measurement.objects.filter(contract_id__in=contract_ids)
+            .values_list('contract_id')
+            .annotate(total=Sum('current_value'))
+        )
+
         contract_data = []
         for c in sub_contracts:
-            contract_total = c.get_contract_total()
-            measured_cumulative = c.get_actual_value()
-            progress = c.get_completion_progress()
+            contract_total = contract_totals.get(c.id) or Decimal('0')
+            measured_cumulative = measured_totals.get(c.id) or Decimal('0')
+            if contract_total > 0:
+                progress = min(100, round((measured_cumulative / contract_total) * 100, 1))
+            else:
+                progress = 0
             contract_data.append({
                 'id': c.id,
                 'code': c.code,

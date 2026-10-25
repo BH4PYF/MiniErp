@@ -402,57 +402,27 @@ def backup_data_task(self, user_id):
     logger.info(f'开始备份系统数据，用户ID: {user_id}')
     
     try:
-        from django.contrib.auth.models import User
         import json
-        from django.http import HttpResponse
-        from django.utils.http import make_attachment_disposition
-        from django.db.models import Model
-        from decimal import Decimal
-        
-        user = User.objects.get(id=user_id)
-        
-        MAX_BACKUP_ROWS = 50000
-        
-        def decimal_default(obj):
-            if isinstance(obj, Decimal):
-                return float(obj)
-            return obj
-        
-        data = {
-            'timestamp': timezone.now().isoformat(),
-            'projects': list(Project.all_objects.values()[:MAX_BACKUP_ROWS]),
-            'categories': list(Category.all_objects.values()[:MAX_BACKUP_ROWS]),
-            'materials': list(Material.objects.values()[:MAX_BACKUP_ROWS]),
-            'suppliers': list(Supplier.all_objects.values()[:MAX_BACKUP_ROWS]),
-            'inbound_records': list(InboundRecord.all_objects.values()[:MAX_BACKUP_ROWS]),
-            'purchase_plans': list(PurchasePlan.all_objects.values()[:MAX_BACKUP_ROWS]),
-            'deliveries': list(Delivery.all_objects.values()[:MAX_BACKUP_ROWS]),
-            'subcontractors': list(Subcontractor.all_objects.values()[:MAX_BACKUP_ROWS]),
-            'subcontract_categories': list(SubcontractCategory.all_objects.values()[:MAX_BACKUP_ROWS]),
-            'subcontract_lists': list(SubcontractList.all_objects.values()[:MAX_BACKUP_ROWS]),
-            'budgets': list(Budget.all_objects.values()[:MAX_BACKUP_ROWS]),
-            'budget_items': list(BudgetItem.objects.values()[:MAX_BACKUP_ROWS]),
-            'contracts': list(Contract.all_objects.values()[:MAX_BACKUP_ROWS]),
-            'contract_items': list(ContractItem.objects.values()[:MAX_BACKUP_ROWS]),
-            'measurements': list(Measurement.all_objects.values()[:MAX_BACKUP_ROWS]),
-            'measurement_items': list(MeasurementItem.objects.values()[:MAX_BACKUP_ROWS]),
-            'settlements': list(Settlement.all_objects.values()[:MAX_BACKUP_ROWS]),
-            'settlement_items': list(SettlementItem.objects.values()[:MAX_BACKUP_ROWS]),
-            'material_plans': list(MaterialPlan.objects.values()[:MAX_BACKUP_ROWS]),
-            'users': list(User.objects.values('id', 'username', 'first_name', 'last_name', 'email', 'is_active', 'is_superuser')[:MAX_BACKUP_ROWS]),
-        }
-        
-        # 保存文件
         import os
+        from django.contrib.auth.models import User
         from django.conf import settings
+
+        from inventory.services.backup_service import (
+            backup_json_default, build_backup_data,
+        )
+
+        User.objects.get(id=user_id)
+        data = build_backup_data()
+
+        # 保存文件
         temp_dir = os.path.join(settings.MEDIA_ROOT, 'backups')
         os.makedirs(temp_dir, exist_ok=True)
-        
+
         filename = f'backup_{timezone.now().strftime("%Y%m%d_%H%M%S")}.json'
         file_path = os.path.join(temp_dir, filename)
-        
+
         with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, default=decimal_default, ensure_ascii=False, indent=2)
+            json.dump(data, f, default=backup_json_default, ensure_ascii=False, indent=2)
         
         logger.info(f'系统数据备份完成，文件路径: {file_path}')
         return {

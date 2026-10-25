@@ -1,9 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db import transaction
+from django.db.models import Sum
 from django.utils import timezone
 from decimal import Decimal
-from inventory.models import Budget, BudgetItem, Project, SubcontractList
+from inventory.models import Budget, BudgetItem, Measurement, Project, SubcontractList
 from inventory.services.rate_limit_service import check_rate_limit
 from .utils import create_excel_workbook, set_column_widths, make_excel_response, admin_management_required
 
@@ -170,14 +171,35 @@ def export_budgets(request):
     headers = ['编号', '项目名称', '预算总额', '实际产值', '完成进度(%)']
     wb, ws, _ = create_excel_workbook('分包预算列表', headers)
 
-    budgets = Budget.objects.select_related('project').all()
+    budgets = list(Budget.objects.select_related('project').all())
+    budget_ids = [b.id for b in budgets]
+    project_ids = {b.project_id for b in budgets}
+    budget_totals = dict(
+        BudgetItem.objects.filter(budget_id__in=budget_ids)
+        .values_list('budget_id')
+        .annotate(total=Sum('total_amount'))
+    )
+    project_actuals = dict(
+        Measurement.objects.filter(
+            contract__project_id__in=project_ids, is_deleted=False,
+        )
+        .values_list('contract__project_id')
+        .annotate(total=Sum('current_value'))
+    )
+
     row = 2
     for b in budgets:
+        budget_total = budget_totals.get(b.id) or Decimal('0')
+        actual_value = project_actuals.get(b.project_id) or Decimal('0')
+        if budget_total > 0:
+            progress = min(100, round((actual_value / budget_total) * 100, 1))
+        else:
+            progress = 0
         ws.cell(row=row, column=1, value=b.code)
         ws.cell(row=row, column=2, value=b.project.name if b.project else '')
-        ws.cell(row=row, column=3, value=float(b.get_budget_total()))
-        ws.cell(row=row, column=4, value=float(b.get_actual_value()))
-        ws.cell(row=row, column=5, value=float(b.get_completion_progress()))
+        ws.cell(row=row, column=3, value=float(budget_total))
+        ws.cell(row=row, column=4, value=float(actual_value))
+        ws.cell(row=row, column=5, value=float(progress))
         row += 1
     
     set_column_widths(ws, [12, 25, 15, 15, 12])
@@ -207,10 +229,10 @@ def export_budget_detail(request, pk):
     ws.cell(row=6, column=2, value=f'{float(budget.get_completion_progress())}%')
     
     row = 8
-    for item in budget.budget_items.all():
+    for item in budget.budget_items.select_related('subcontract_list__category').all():
         ws.cell(row=row, column=1, value=item.item_order)
         ws.cell(row=row, column=2, value=item.subcontract_list.name)
-        ws.cell(row=row, column=3, value=item.subcontract_list.category or '')
+        ws.cell(row=row, column=3, value=item.subcontract_list.category.category_name if item.subcontract_list.category else '')
         ws.cell(row=row, column=4, value=item.subcontract_list.construction_params or '')
         ws.cell(row=row, column=5, value=item.subcontract_list.unit or '')
         ws.cell(row=row, column=6, value=float(item.quantity) if item.quantity else 0)

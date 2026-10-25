@@ -120,6 +120,9 @@
                 <a class="nav-link sidebar-link {% if 'log' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'log_list' %}">
                     <i class="bi bi-journal-text"></i> 操作日志
                 </a>
+                <a class="nav-link sidebar-link {% if 'recycle' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'recycle_bin' %}">
+                    <i class="bi bi-trash3"></i> 回收站
+                </a>
                 <a class="nav-link sidebar-link {% if 'user' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'user_list' %}">
                     <i class="bi bi-people"></i> 用户管理
                 </a>

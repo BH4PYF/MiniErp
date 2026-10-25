@@ -4,6 +4,7 @@ import logging
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.http import JsonResponse, HttpResponse
 from django.db.models import Count
 from django.views.decorators.http import require_GET, require_POST
@@ -18,10 +19,13 @@ from ..models import (
     Measurement, MeasurementItem, Settlement, SettlementItem,
     MaterialPlan,
 )
+from ..services.backup_service import (
+    RESTORE_LABELS, RestoreError, backup_json_default,
+    build_backup_data, restore_backup_data,
+)
 from .utils import (
     admin_required, log_operation,
-    generate_code, decimal_default,
-    make_attachment_disposition,
+    generate_code, make_attachment_disposition,
 )
 
 logger = logging.getLogger('inventory')
@@ -427,35 +431,12 @@ def init_categories(request):
 @admin_required
 @require_POST
 def backup_data(request):
-
-    MAX_BACKUP_ROWS = 50000
-
-    data = {
-        'timestamp': timezone.now().isoformat(),
-        'projects': list(Project.all_objects.values()[:MAX_BACKUP_ROWS]),
-        'categories': list(Category.all_objects.values()[:MAX_BACKUP_ROWS]),
-        'materials': list(Material.objects.values()[:MAX_BACKUP_ROWS]),
-        'suppliers': list(Supplier.all_objects.values()[:MAX_BACKUP_ROWS]),
-        'inbound_records': list(InboundRecord.all_objects.values()[:MAX_BACKUP_ROWS]),
-        'purchase_plans': list(PurchasePlan.all_objects.values()[:MAX_BACKUP_ROWS]),
-        'deliveries': list(Delivery.all_objects.values()[:MAX_BACKUP_ROWS]),
-        'subcontractors': list(Subcontractor.all_objects.values()[:MAX_BACKUP_ROWS]),
-        'subcontract_categories': list(SubcontractCategory.all_objects.values()[:MAX_BACKUP_ROWS]),
-        'subcontract_lists': list(SubcontractList.all_objects.values()[:MAX_BACKUP_ROWS]),
-        'budgets': list(Budget.all_objects.values()[:MAX_BACKUP_ROWS]),
-        'budget_items': list(BudgetItem.objects.values()[:MAX_BACKUP_ROWS]),
-        'contracts': list(Contract.all_objects.values()[:MAX_BACKUP_ROWS]),
-        'contract_items': list(ContractItem.objects.values()[:MAX_BACKUP_ROWS]),
-        'measurements': list(Measurement.all_objects.values()[:MAX_BACKUP_ROWS]),
-        'measurement_items': list(MeasurementItem.objects.values()[:MAX_BACKUP_ROWS]),
-        'settlements': list(Settlement.all_objects.values()[:MAX_BACKUP_ROWS]),
-        'settlement_items': list(SettlementItem.objects.values()[:MAX_BACKUP_ROWS]),
-        'material_plans': list(MaterialPlan.objects.values()[:MAX_BACKUP_ROWS]),
-        'users': list(User.objects.values('id', 'username', 'first_name', 'last_name', 'email', 'is_active', 'is_superuser')[:MAX_BACKUP_ROWS]),
-    }
-
+    data = build_backup_data()
     filename = f'backup_{timezone.now().strftime("%Y%m%d_%H%M%S")}.json'
-    response = HttpResponse(json.dumps(data, default=decimal_default, ensure_ascii=False, indent=2), content_type='application/json')
+    response = HttpResponse(
+        json.dumps(data, default=backup_json_default, ensure_ascii=False, indent=2),
+        content_type='application/json',
+    )
     response['Content-Disposition'] = make_attachment_disposition(filename)
     log_operation(request.user, '系统设置', 'export', '备份系统数据')
     return response
@@ -464,37 +445,7 @@ def backup_data(request):
 @admin_required
 @require_POST
 def restore_data(request):
-    """从备份文件恢复数据"""
-    ALLOWED_FIELDS = {
-        'categories': {'name', 'remark', 'is_deleted', 'deleted_at'},
-        'projects': {
-            'name', 'manager', 'start_date', 'end_date',
-            'budget', 'status', 'remark', 'is_deleted', 'deleted_at',
-        },
-        'suppliers': {
-            'name', 'contact', 'phone', 'address', 'main_type_id',
-            'credit_rating', 'start_date', 'remark', 'is_deleted', 'deleted_at',
-        },
-        'materials': {
-            'name', 'category_id', 'spec', 'unit',
-            'standard_price', 'safety_stock', 'remark',
-        },
-        'inbound_records': {
-            'project_id', 'material_id', 'date', 'quantity', 'unit_price',
-            'total_amount', 'supplier_id', 'batch_no', 'inspector',
-            'quality_status', 'spec', 'operator_id',
-            'operate_time', 'remark', 'is_deleted', 'deleted_at',
-        },
-        'purchase_plans': {
-            'project_id', 'material_id', 'quantity', 'unit_price',
-            'total_amount', 'status', 'planned_date', 'remark',
-            'operator_id', 'is_deleted', 'deleted_at',
-        },
-        'users': {
-            'first_name', 'last_name', 'email', 'is_active', 'is_superuser',
-        },
-    }
-
+    """从备份文件恢复数据（按业务编号覆盖，失败整体回滚）"""
     file = request.FILES.get('file')
     if not file:
         return JsonResponse({'error': '请选择备份文件'}, status=400)
@@ -509,54 +460,25 @@ def restore_data(request):
     except (json.JSONDecodeError, UnicodeDecodeError):
         return JsonResponse({'error': '无效的备份文件格式'}, status=400)
 
-    if 'timestamp' not in data:
+    if not isinstance(data, dict) or 'timestamp' not in data:
         return JsonResponse({'error': '无效的备份文件：缺少时间戳'}, status=400)
 
-    restored = {}
-    model_map = {
-        'categories': (Category.all_objects, ALLOWED_FIELDS['categories']),
-        'projects': (Project.all_objects, ALLOWED_FIELDS['projects']),
-        'suppliers': (Supplier.all_objects, ALLOWED_FIELDS['suppliers']),
-        'materials': (Material.objects, ALLOWED_FIELDS['materials']),
-        'inbound_records': (InboundRecord.all_objects, ALLOWED_FIELDS['inbound_records']),
-        'purchase_plans': (PurchasePlan.all_objects, ALLOWED_FIELDS['purchase_plans']),
-        'users': (User.objects, ALLOWED_FIELDS['users']),
-    }
-
     try:
-        with transaction.atomic():
-            for key, (manager, allowed) in model_map.items():
-                if key not in data:
-                    continue
-
-                count = 0
-                for item in data[key]:
-                    if key == 'users':
-                        lookup_field = 'username'
-                        lookup_value = item.get('username')
-                    elif key in ('inbound_records', 'purchase_plans'):
-                        lookup_field = 'no'
-                        lookup_value = item.get('no')
-                    else:
-                        lookup_field = 'code'
-                        lookup_value = item.get('code')
-
-                    if not lookup_value:
-                        continue
-
-                    defaults = {k: v for k, v in item.items() if k in allowed}
-                    manager.update_or_create(**{lookup_field: lookup_value}, defaults=defaults)
-                    count += 1
-                restored[key] = count
-
-    except (IntegrityError, DatabaseError) as e:
+        restored = restore_backup_data(data)
+    except RestoreError as e:
+        logger.warning('数据恢复失败：%s', e)
+        return JsonResponse({'error': f'数据恢复失败：{e}，已回滚所有更改'}, status=400)
+    except (IntegrityError, DatabaseError):
         logger.exception('数据恢复失败：数据库操作异常')
         return JsonResponse({'error': '数据恢复失败：数据库操作异常，已回滚所有更改'}, status=500)
-    except (ValueError, TypeError, KeyError) as e:
+    except (ValueError, TypeError, KeyError, ValidationError):
         logger.exception('数据恢复失败：备份文件数据格式错误')
         return JsonResponse({'error': '数据恢复失败：备份文件中包含无效数据，已回滚所有更改'}, status=400)
 
-    summary = ', '.join(f'{k}: {v}条' for k, v in restored.items())
+    summary = ', '.join(
+        f'{RESTORE_LABELS.get(key, key)}: {value}条'
+        for key, value in restored.items() if value
+    ) or '无数据变更'
     log_operation(request.user, '系统设置', 'other', f'从备份恢复数据：{summary}')
     return JsonResponse({
         'success': True,
