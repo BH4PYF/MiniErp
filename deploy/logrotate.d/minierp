@@ -1,0 +1,17 @@
+/home/abc/MiniErp/deploy/logs/gunicorn_access.log {
+    daily
+    maxsize 50M
+    rotate 14
+    missingok
+    notifempty
+    compress
+    delaycompress
+    dateext
+    dateformat -%Y%m%d
+    create 0644 root root
+    su root root
+    sharedscripts
+    postrotate
+        /usr/bin/docker kill -s USR1 minierp-web >/dev/null 2>&1 || true
+    endscript
+}

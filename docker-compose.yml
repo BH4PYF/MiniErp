@@ -35,10 +35,12 @@ services:
       - REDIS_PORT=6379
       - DB_HOST=127.0.0.1
       - DB_PORT=5432
+      - LOG_DIR=/app/logs/web
     volumes:
       - ./staticfiles:/app/staticfiles
       - ./media:/app/media
       - ./deploy/logs:/app/deploy/logs
+      - ./logs:/app/logs
     depends_on:
       - db
       - redis
@@ -61,10 +63,12 @@ services:
       - REDIS_PORT=6379
       - DB_HOST=127.0.0.1
       - DB_PORT=5432
+      - LOG_DIR=/app/logs/celery
     volumes:
       - ./staticfiles:/app/staticfiles
       - ./media:/app/media
       - ./deploy/logs:/app/deploy/logs
+      - ./logs:/app/logs
     command: celery -A minierp worker -l info -c 2
     depends_on:
       - db

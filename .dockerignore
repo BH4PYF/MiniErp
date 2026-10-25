@@ -8,6 +8,7 @@ __pycache__
 .deploy
 .deploy/celerybeat
 deploy/logs
+logs
 staticfiles
 media
 .DS_Store

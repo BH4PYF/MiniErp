@@ -12,6 +12,7 @@ venv/
 
 # 日志
 logs/*.log
+logs/**/*.log
 !logs/.gitkeep
 
 # 备份
